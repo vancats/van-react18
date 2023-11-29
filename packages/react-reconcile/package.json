@@ -1,0 +1,9 @@
+{
+    "name": "react-reconcile",
+    "version": "1.0.0",
+    "description": "react reconcile",
+    "keywords": [],
+    "license": "ISC",
+    "author": "",
+    "module": "index.ts"
+}

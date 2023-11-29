@@ -1,3 +1,9 @@
 {
-    "extends": "@vancats/eslint-config-ts"
+    "extends": "@vancats/eslint-config-ts",
+    "rules": {
+        "space-before-function-paren": "off",
+        "@typescript-eslint/indent": "off",
+        "no-console": "off",
+        "curly": "off"
+    }
 }
