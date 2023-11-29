@@ -4,6 +4,7 @@
         "space-before-function-paren": "off",
         "@typescript-eslint/indent": "off",
         "no-console": "off",
-        "curly": "off"
+        "curly": "off",
+        "no-unmodified-loop-condition": "off"
     }
 }
