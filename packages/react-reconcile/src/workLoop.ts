@@ -1,23 +1,46 @@
 import { beginWork } from './beginWork'
 import { completeWork } from './completeWork'
-import type { FiberNode } from './fiber'
+import { type FiberNode, type FiberRootNode, createWorkInProgress } from './fiber'
+import { HostRoot } from './workTags'
 
 let workInProgress: FiberNode | null = null
-
-function prepareFreshStack(root: FiberNode) {
-    workInProgress = root
+function prepareFreshStack(root: FiberRootNode) {
+    // 创建/更新 wip
+    workInProgress = createWorkInProgress(root.current, {})
 }
 
-export function renderRoot(root: FiberNode) {
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+    // 找到根节点
+    const root = markUpdateFromFiberToRoot(fiber)
+    renderRoot(root)
+}
+
+function markUpdateFromFiberToRoot(fiber: FiberNode) {
+    let node: FiberNode | null = fiber
+    let parent = fiber.return
+    while (parent !== null) {
+        node = parent
+        parent = node.return
+    }
+    if (node.tag === HostRoot) {
+        return node.stateNode
+    }
+    return null
+}
+
+function renderRoot(root: FiberRootNode) {
     prepareFreshStack(root)
 
-    try {
-        workLoop()
-    }
-    catch (error) {
-        console.warn('work loop failed')
-        workInProgress = null
-    }
+    do {
+        try {
+            workLoop()
+            break
+        }
+        catch (e) {
+            workInProgress = null
+            console.warn('work loop failed')
+        }
+    } while (true)
 }
 
 function workLoop() {
