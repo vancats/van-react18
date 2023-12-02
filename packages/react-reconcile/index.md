@@ -28,3 +28,20 @@
 - workInProgress
 - performUnitOfWork
 - completeUnitOfWork
+
+### beginWork
+> 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
+> 2. 只标记结构相关副作用：Placement ChildDeletion
+1. HostRoot:
+   1. 计算更新后的状态
+   2. 创建子 fiberNode
+2. HostComponent
+   1. 创建子 fiberNode
+3. HostText: 没有子节点，不进行 beginWork
+
+#### ChildReconciler
+1. 性能优化：首屏渲染时，只有 hostRootFiber 会进行 Placement，其他的都不参与副作用，通过闭包与 placeSingleChild 实现
+2. $$typeof
+   1. REACT_ELEMENT_TYPE: reconcileSingleElement
+   2. HOST_TEXT: reconcileSingleTextNode
+   3. TODO 多节点
