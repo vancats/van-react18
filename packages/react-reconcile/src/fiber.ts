@@ -22,6 +22,7 @@ export class FiberNode {
     memoizedState: any
     alternate: FiberNode | null
     flags: Flags // 副作用
+    subtreeFlags: Flags
     updateQueue: unknown
 
     constructor(tag: WorkTag, pendingProps: Props, key: Key) {
@@ -41,6 +42,7 @@ export class FiberNode {
         this.memoizedState = null
         this.alternate = null
         this.flags = NoFlags
+        this.subtreeFlags = NoFlags
         this.updateQueue = null
     }
 }
@@ -75,6 +77,7 @@ export function createWorkInProgress(
         // update
         wip.pendingProps = pendingProps
         wip.flags = NoFlags
+        wip.subtreeFlags = NoFlags
     }
     // 这里是 updateQueue 中实现了 shared 的原因
     wip.updateQueue = current.updateQueue

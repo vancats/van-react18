@@ -5,7 +5,7 @@
 ### FiberNode
 1. 实例属性：tag、key、stateNode、type、ref
 2. 节点关系：return、sibling、child、index
-3. 工作单元：pendingProps、memoizedProps、alternate、flags、updateQueue、memoizedState
+3. 工作单元：pendingProps、memoizedProps、alternate、flags、subtreeFlags、updateQueue、memoizedState
 
 ### FiberRootNode
 > createRoot 创建的当前应用统一根节点
@@ -13,7 +13,7 @@
 2. current: hostRootFiber
 3. finishedWork: 更新完成之后的 hostRootFiber
 
-## Update
+### Update
 - enqueueUpdate
 - processUpdateQueue
 
@@ -29,7 +29,7 @@
 - performUnitOfWork
 - completeUnitOfWork
 
-### beginWork
+## beginWork
 > 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
 > 2. 只标记结构相关副作用：Placement ChildDeletion
 1. HostRoot:
@@ -45,3 +45,10 @@
    1. REACT_ELEMENT_TYPE: reconcileSingleElement
    2. HOST_TEXT: reconcileSingleTextNode
    3. TODO 多节点
+
+## completeWork
+> 对于 Host 类型 fiberNode 构建离屏 DOM 树
+> 标记 Update Flag
+
+
+
