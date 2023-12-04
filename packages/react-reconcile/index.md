@@ -24,10 +24,12 @@
 - updateContainer: enqueueUpdate & scheduleUpdateOnFiber
   - 在这里将渲染和更新相连接
 
-## scheduleUpdateOnFiber
+# scheduleUpdateOnFiber
 - workInProgress
 - performUnitOfWork
 - completeUnitOfWork
+
+
 
 ## beginWork
 > 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
@@ -46,9 +48,36 @@
    2. HOST_TEXT: reconcileSingleTextNode
    3. TODO 多节点
 
+
+
+
 ## completeWork
 > 对于 Host 类型 fiberNode 构建离屏 DOM 树
 > 标记 Update Flag
 
 
 
+
+## commitWork
+1. 共有三个阶段，每个阶段各有一个副作用Mask，判断 finishedWork 的 subtreeFlags 和 flags
+   1. beforeMutation
+   2. Mutation: commitMutationEffects
+   3. Layout
+2. 获取 finishedWork 并切换
+
+### commitMutationEffects
+1. 向下DFS找到 subtreeFlags 为 NoFlags 的 fiberNode
+2. commitMutationEffectsOnFiber
+3. 向右向上DFS
+   1. 寻找 sibling 再次向下DFS
+   2. 处理 return 节点
+
+#### commitMutationEffectsOnFiber
+> 拿到对应的副作用，进行增删改
+1. commitPlacement
+   1. getHostParent 找到父节点的原生节点
+      1. HostComponent：stateNode
+      2. HostRoot：stateNode.container
+   2. appendPlacementNodeIntoContainer
+      1. 如果当前 fiber 是 Host 节点，直接 appendChildToContainer(宿主环境方法)
+      2. 如果不是，DFS遍历 fiber 的 child 和所有 sibling

@@ -1,6 +1,8 @@
 import { beginWork } from './beginWork'
+import { commitMutationEffects } from './commitWork'
 import { completeWork } from './completeWork'
 import { type FiberNode, type FiberRootNode, createWorkInProgress } from './fiber'
+import { MutationMask, NoFlags } from './fiberFlags'
 import { HostRoot } from './workTags'
 
 let workInProgress: FiberNode | null = null
@@ -43,6 +45,38 @@ function renderRoot(root: FiberRootNode) {
             workInProgress = null
         }
     } while (true)
+
+    // 这个就是 wip
+    const finishedWork = root.current.alternate
+    root.finishedWork = finishedWork
+
+    commitRoot(root)
+}
+
+function commitRoot(root: FiberRootNode) {
+    const finishedWork = root.finishedWork
+    if (finishedWork === null) {
+        return
+    }
+    if (__DEV__) {
+        console.warn('commit阶段开始', finishedWork)
+    }
+
+    // 重置操作
+    root.finishedWork = null
+
+    const subtreeHasEffect = (finishedWork.subtreeFlags & MutationMask) !== NoFlags
+    const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags
+
+    // Mutation 阶段
+    if (subtreeHasEffect || rootHasEffect) {
+        commitMutationEffects(finishedWork)
+        // 需要进行节点树切换
+        root.current = finishedWork
+    }
+    else {
+        root.current = finishedWork
+    }
 }
 
 function workLoop() {
