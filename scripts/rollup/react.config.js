@@ -2,7 +2,9 @@ import generatePackageJson from 'rollup-plugin-generate-package-json'
 import { getBaseRollupPlugins, getPkgJSON, resolvePkgPath } from './utils'
 
 const { name, module } = getPkgJSON('react')
+// 包路径
 const pkgPath = resolvePkgPath(name)
+// 产物路径
 const pkgDistPath = resolvePkgPath(name, true)
 
 export default [

@@ -10,5 +10,5 @@
       2. npx husky add .husky/pre-commit "pnpm run lint:fix && git add ."
    2. commitlint @commitlint/cli + @commitlint/config-conventional
       1. npx husky add .husky/commit-msg 'npx --no-install commitlint -e $HUSKY_GIT_PARAMS'
-5. 开发环境标识__DEV__
-   - @rollup/plugin-replace
+5. 开发环境标识__DEV__: @rollup/plugin-replace
+6. 别名: @rollup/plugin-alias
