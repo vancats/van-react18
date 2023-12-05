@@ -81,3 +81,15 @@
    2. appendPlacementNodeIntoContainer
       1. 如果当前 fiber 是 Host 节点，直接 appendChildToContainer(宿主环境方法)
       2. 如果不是，DFS遍历 fiber 的 child 和所有 sibling
+
+
+## Hooks 架构
+> hook 怎么感知上下文，以及感知 mount 还是 update
+> React 导出的 hooks，但是实现在 reconciler 中
+>   React 中创建一个内部数据共享层，在 shared 中流通
+1. 在不同的时期，mount update 时，会创建不同的 hooks 集合，react 中使用的是这个集合，而不是直接调用 hooks
+
+- currentDispatcher: hooks 的集合
+- resolveDispatcher: 获取 currentDispatcher.current
+- hooks: 直接在React包中导出
+  - Dispatcher: 所有的 hooks 的类型定义

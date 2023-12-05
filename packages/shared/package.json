@@ -4,5 +4,8 @@
     "description": "shared public function and type",
     "keywords": [],
     "license": "ISC",
-    "author": ""
+    "author": "",
+    "dependencies": {
+        "react": "workspace:*"
+    }
 }
