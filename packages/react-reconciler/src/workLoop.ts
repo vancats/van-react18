@@ -33,18 +33,15 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
 function renderRoot(root: FiberRootNode) {
     prepareFreshStack(root)
 
-    do {
-        try {
-            workLoop()
-            break
+    try {
+        workLoop()
+    }
+    catch (e) {
+        if (__DEV__) {
+            console.warn('work loop failed', e)
         }
-        catch (e) {
-            if (__DEV__) {
-                console.warn('work loop failed', e)
-            }
-            workInProgress = null
-        }
-    } while (true)
+        workInProgress = null
+    }
 
     // 这个就是 wip
     const finishedWork = root.current.alternate
