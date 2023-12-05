@@ -1,9 +1,12 @@
 {
-    "name": "react-reconcile",
+    "name": "react-reconciler",
     "version": "1.0.0",
-    "description": "react reconcile",
+    "description": "react reconciler",
     "keywords": [],
     "license": "ISC",
     "author": "",
-    "module": "index.ts"
+    "module": "index.ts",
+    "dependencies": {
+        "shared": "workspace:*"
+    }
 }

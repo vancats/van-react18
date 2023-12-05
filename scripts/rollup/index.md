@@ -9,4 +9,3 @@
 ## 配置
 1. --bundleConfigAsCjs 将 config 文件作为 CommonJS 模块导出
 2. --config 指定文件
-3. pnpm link --global + pnpm link [package] --global 指定为全局依赖包，必须在对应目录下进行
