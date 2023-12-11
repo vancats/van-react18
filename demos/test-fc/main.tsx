@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
@@ -10,7 +10,8 @@ function App() {
 }
 
 function Child() {
-    return <span>vancats</span>
+    const [num] = useState(100)
+    return <span>{num}</span>
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App /> as any)

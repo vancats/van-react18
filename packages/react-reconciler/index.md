@@ -83,13 +83,30 @@
       2. 如果不是，DFS遍历 fiber 的 child 和所有 sibling
 
 
+
+
+
 ## Hooks 架构
 > hook 怎么感知上下文，以及感知 mount 还是 update
 > React 导出的 hooks，但是实现在 reconciler 中
 >   React 中创建一个内部数据共享层，在 shared 中流通
 1. 在不同的时期，mount update 时，会创建不同的 hooks 集合，react 中使用的是这个集合，而不是直接调用 hooks
 
+### Dispatcher
 - currentDispatcher: hooks 的集合
 - resolveDispatcher: 获取 currentDispatcher.current
 - hooks: 直接在React包中导出
   - Dispatcher: 所有的 hooks 的类型定义
+
+### memoizedState
+- FC 中的指向 hooks 链表
+- 每个Hooks中存储 hook 数据
+- HostRoot 中存储的是 <App /> 的ReactElement
+
+### 实现 Hooks结构
+1. currentlyRenderingFiber: 当前正在活动的 fiber
+2. workInProgressHook: 当前正在处理的 hook
+3. HooksDispatcherOnMount: 当前的 hooks 集合
+   1. mountState
+4. dispatchSetState: 将 hooks 接入现有的更新流程中
+5. mountWorkInProgressHook: 创建当前的 hook
