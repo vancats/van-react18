@@ -13,6 +13,14 @@ const ReactElement = function (type: ElementType, key: Key, ref: Ref, props: Pro
     return element
 }
 
+export function isValidElement(object: any): object is ReactElementType {
+    return (
+        typeof object === 'object'
+        && object !== null
+        && object.$$typeof === REACT_ELEMENT_TYPE
+    )
+}
+
 export const jsx = (
     type: ElementType,
     config: any,

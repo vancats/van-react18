@@ -1,6 +1,6 @@
 # React18
 
-## 依赖
+## 配置
 1. workspace + pnpm init
 2. tsconfig
 3. eslintrc
@@ -13,6 +13,14 @@
 5. 开发环境标识__DEV__: @rollup/plugin-replace
 6. 别名: @rollup/plugin-alias
 7. --force 代表不会走预编译，不走缓存
+8. jest
+   1. jest-config: 默认配置
+   2. jest-environment-jsdom: 跑测试用例的默认宿主环境
+9. babel
+   1. @babel/core
+   2. @babel/preset-env
+   3. @babel/plugin-transform-react-jsx
+   4. // 如果是React项目可以使用该集合 @babel/preset-react
 
 
 ## 调试

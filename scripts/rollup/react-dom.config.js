@@ -9,19 +9,20 @@ const pkgPath = resolvePkgPath(name)
 const pkgDistPath = resolvePkgPath(name, true)
 
 export default [
+    // react-dom
     {
         input: `${pkgPath}/${module}`,
         output: [
             {
                 // React17
                 file: `${pkgDistPath}/index.js`,
-                name: 'index.js',
+                name: 'ReactDOM',
                 format: 'umd',
             },
             {
                 // React18
                 file: `${pkgDistPath}/client.js`,
-                name: 'client.js',
+                name: 'client',
                 format: 'umd',
             },
         ],
@@ -49,5 +50,19 @@ export default [
                     main: 'index.js',
                 }),
             })],
+    },
+    // react-test-utils
+    {
+        input: `${pkgPath}/test-utils.ts`,
+        output: [
+            {
+                file: `${pkgDistPath}/test-utils.js`,
+                name: 'testUtils',
+                format: 'umd',
+            },
+        ],
+        // 对于 test 文件来说，React和ReactDOM都应该是外部依赖，不应该内部引入
+        external: ['react', 'react-dom'],
+        plugins: [getBaseRollupPlugins()],
     },
 ]
