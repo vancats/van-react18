@@ -5,7 +5,7 @@
 ### FiberNode
 1. 实例属性：tag、key、stateNode、type、ref
 2. 节点关系：return、sibling、child、index
-3. 工作单元：pendingProps、memoizedProps、alternate、flags、subtreeFlags、updateQueue、memoizedState
+3. 工作单元：pendingProps、memoizedProps、alternate、flags、subtreeFlags、updateQueue、memoizedState、deletions
 
 ### FiberRootNode
 > createRoot 创建的当前应用统一根节点
@@ -81,6 +81,14 @@
    2. appendPlacementNodeIntoContainer
       1. 如果当前 fiber 是 Host 节点，直接 appendChildToContainer(宿主环境方法)
       2. 如果不是，DFS遍历 fiber 的 child 和所有 sibling
+2. commitUpdate
+   1. 在 hostConfig 中进行更新，判断为元素或文本等
+3. commitDeletion
+   1. 取出 fiber 中的 deletions 并 commit 每一项
+   2. commitNestedComponent
+      1. 递归遍历每一项，每次都需要执行参数中的 onCommitUnmount
+      2. 在回调中统一执行一些卸载和解绑操作，并更新获得该子节点的 host 节点
+   3. 移除该 host 节点的DOM
 
 
 
@@ -106,7 +114,10 @@
 ### 实现 Hooks结构
 1. currentlyRenderingFiber: 当前正在活动的 fiber
 2. workInProgressHook: 当前正在处理的 hook
-3. HooksDispatcherOnMount: 当前的 hooks 集合
+3. HooksDispatcherOnMount: mount 时的 hooks 集合
    1. mountState
-4. dispatchSetState: 将 hooks 接入现有的更新流程中
-5. mountWorkInProgressHook: 创建当前的 hook
+      1. mountWorkInProgressHook: 创建当前的 hook
+      2. dispatchSetState: 将 hooks 接入现有的更新流程中，并且保存到 updateQueue 中以便更新时获取
+4. HooksDispatcherOnUpdate: update 时的 hooks 集合
+   1. updateState
+      1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据

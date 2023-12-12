@@ -24,6 +24,8 @@ export class FiberNode {
     flags: Flags // 副作用
     subtreeFlags: Flags
     updateQueue: unknown
+    // 需要被删除的子节点
+    deletions: FiberNode[] | null
 
     constructor(tag: WorkTag, pendingProps: Props, key: Key) {
         this.tag = tag
@@ -44,6 +46,7 @@ export class FiberNode {
         this.flags = NoFlags
         this.subtreeFlags = NoFlags
         this.updateQueue = null
+        this.deletions = null
     }
 }
 
@@ -78,6 +81,7 @@ export function createWorkInProgress(
         wip.pendingProps = pendingProps
         wip.flags = NoFlags
         wip.subtreeFlags = NoFlags
+        wip.deletions = null
     }
     // 这里是 updateQueue 中实现了 shared 的原因
     wip.updateQueue = current.updateQueue

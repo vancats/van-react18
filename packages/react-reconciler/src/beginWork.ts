@@ -60,7 +60,7 @@ function reconcileChildren(wip: FiberNode, nextChildren?: ReactElementType) {
     const current = wip.alternate
     /// 性能优化策略：mount 时之后 hostRootFiber 有 current，所以只会对其添加副作用
     if (current !== null) {
-        wip.child = reconcileChildFibers(wip, current, nextChildren)
+        wip.child = reconcileChildFibers(wip, current.child, nextChildren)
     }
     else {
         wip.child = mountChildFibers(wip, null, nextChildren)

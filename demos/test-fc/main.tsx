@@ -2,16 +2,14 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
-    return (
-        <div>
-            <Child />
-        </div>
-    )
+    const [num, setNum] = useState(100)
+    // @ts-ignore
+    window.setNum = setNum
+    return num < 10 ? <Child /> : <div>{num}</div>
 }
 
 function Child() {
-    const [num] = useState(100)
-    return <span>{num}</span>
+    return <span>vancats</span>
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<App /> as any)
+ReactDOM.createRoot(document.getElementById('root')!).render(<App />)

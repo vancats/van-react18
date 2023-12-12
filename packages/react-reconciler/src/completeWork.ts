@@ -2,7 +2,11 @@ import type { Container } from 'hostConfig'
 import { appendInitialChild, createInstance, createTextInstance } from 'hostConfig'
 import type { FiberNode } from './fiber'
 import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
-import { NoFlags } from './fiberFlags'
+import { NoFlags, Update } from './fiberFlags'
+
+function markUpdate(fiber: FiberNode) {
+    fiber.flags |= Update
+}
 
 export const completeWork = (wip: FiberNode) => {
     const newProps = wip.pendingProps
@@ -24,6 +28,11 @@ export const completeWork = (wip: FiberNode) => {
         case HostText:
             if (current !== null && wip.stateNode) {
                 // update
+                const oldText = current.memoizedProps.content
+                const newText = newProps.content
+                if (oldText !== newText) {
+                    markUpdate(wip)
+                }
             }
             else {
                 // 1. 构建DOM
