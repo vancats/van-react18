@@ -1,5 +1,6 @@
 import type { Container } from 'hostConfig'
 import { appendInitialChild, createInstance, createTextInstance } from 'hostConfig'
+import { updateFiberProps } from 'react-dom/src/SyntheticEvent'
 import type { FiberNode } from './fiber'
 import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
 import { NoFlags, Update } from './fiberFlags'
@@ -15,10 +16,12 @@ export const completeWork = (wip: FiberNode) => {
         case HostComponent:
             if (current !== null && wip.stateNode) {
                 // update
+                // TODO 应该要做部分的更新，以及标记 Update 的操作
+                updateFiberProps(wip.stateNode, newProps)
             }
             else {
                 // 1. 构建DOM
-                const instance = createInstance(wip.type)
+                const instance = createInstance(wip.type, newProps)
                 // 2. 插入到DOM树
                 appendAllChildren(instance, wip)
                 wip.stateNode = instance

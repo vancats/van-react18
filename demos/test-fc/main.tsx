@@ -3,9 +3,7 @@ import ReactDOM from 'react-dom/client'
 
 function App() {
     const [num, setNum] = useState(100)
-    // @ts-ignore
-    window.setNum = setNum
-    return num < 10 ? <Child /> : <div>{num}</div>
+    return <div onClickCapture={() => setNum(num + 1)}>{num}</div>
 }
 
 function Child() {

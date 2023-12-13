@@ -1,14 +1,17 @@
 import type { FiberNode } from 'react-reconciler/src/fiber'
-import { HostText } from 'react-reconciler/src/workTags'
+import { HostComponent, HostText } from 'react-reconciler/src/workTags'
+import type { Props } from 'shared/ReactType'
+import type { DOMElement } from './SyntheticEvent'
+import { updateFiberProps } from './SyntheticEvent'
 
 export type Container = Element
 export type Instance = Element
 export type TextInstance = Text
 
-export const createInstance = (type: string): Instance => {
-    const element = document.createElement(type)
-    // TODO 处理 props
-    return element
+export const createInstance = (type: string, props: Props): Instance => {
+    const element = document.createElement(type) as unknown
+    updateFiberProps(element as DOMElement, props)
+    return element as DOMElement
 }
 
 export const createTextInstance = (context: string) => {
@@ -25,6 +28,9 @@ export const commitUpdate = (fiber: FiberNode) => {
     switch (fiber.tag) {
         case HostText:
             return commitTextUpdate(fiber.stateNode, fiber.pendingProps.content)
+        case HostComponent:
+            // TODO 处理一些更新Props的流程
+            return
         default:
             if (__DEV__) {
                 console.warn('未实现的update类型', fiber)
