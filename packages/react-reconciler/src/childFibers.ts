@@ -27,30 +27,48 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         }
     }
 
+    function deleteRemainingChildren(returnFiber: FiberNode, currentFirstChild: FiberNode | null) {
+        if (!shouldTrackEffects) {
+            return
+        }
+        let childToDelete = currentFirstChild
+        while (childToDelete !== null) {
+            deleteChild(returnFiber, childToDelete)
+            childToDelete = childToDelete.sibling
+        }
+    }
+
     function reconcileSingleElement(
         returnFiber: FiberNode,
         currentFiber: FiberNode | null,
         element: ReactElementType,
     ) {
-        if (currentFiber !== null) {
+        while (currentFiber !== null) {
             // 只有 key 和 type 都相同时进行复用，其他情况都直接删除重建
             if (element.key === currentFiber.key) {
                 if (element.$$typeof === REACT_ELEMENT_TYPE) {
                     if (element.type === currentFiber.type) {
+                        // 找到可复用节点
                         const existing = useFiber(currentFiber, element.props)
                         existing.return = returnFiber
+                        deleteRemainingChildren(returnFiber, currentFiber.sibling)
                         return existing
                     }
-                    deleteChild(returnFiber, currentFiber)
+                    // key 相同，type 不同，删除所有节点
+                    deleteRemainingChildren(returnFiber, currentFiber)
+                    break
                 }
                 else {
                     if (__DEV__) {
                         console.warn('暂未实现该类型', element)
+                        break
                     }
                 }
             }
             else {
+                // key 不同直接删
                 deleteChild(returnFiber, currentFiber)
+                currentFiber = currentFiber.sibling
             }
         }
 
@@ -64,14 +82,16 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         currentFiber: FiberNode | null,
         content: string | number,
     ) {
-        if (currentFiber !== null) {
+        while (currentFiber !== null) {
             if (currentFiber.tag === HostText) {
                 const existing = useFiber(currentFiber, { content })
                 existing.return = returnFiber
+                deleteRemainingChildren(returnFiber, currentFiber.sibling)
                 return existing
             }
             else {
                 deleteChild(returnFiber, currentFiber)
+                currentFiber = currentFiber.sibling
             }
         }
         const fiber = new FiberNode(HostText, { content }, null)
