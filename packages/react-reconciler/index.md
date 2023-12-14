@@ -43,10 +43,17 @@
 
 #### ChildReconciler
 1. 性能优化：首屏渲染时，只有 hostRootFiber 会进行 Placement，其他的都不参与副作用，通过闭包与 placeSingleChild 实现
-2. $$typeof
-   1. REACT_ELEMENT_TYPE: reconcileSingleElement
-   2. HOST_TEXT: reconcileSingleTextNode
-   3. TODO 多节点
+3. REACT_ELEMENT_TYPE: reconcileSingleElement
+4. HOST_TEXT: reconcileSingleTextNode
+5. 多节点: reconcileChildrenArray
+   1. 将 current 保存到 map 中
+   2. 遍历 newChild，寻找复用节点，不能复用再进行重新创建: updateFromMap
+      1. HostText
+      2. ReactElement
+      3. 数组类型
+      4. Fragment
+   3. 标记移动或者插入
+   4. 将 map 中剩下的标记删除
 
 
 
