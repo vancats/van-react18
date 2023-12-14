@@ -85,7 +85,8 @@
    1. getHostParent 找到父节点的原生节点
       1. HostComponent：stateNode
       2. HostRoot：stateNode.container
-   2. appendPlacementNodeIntoContainer
+   2. getHostSibling 找到第一个Host类型兄弟节点，如果找到了，那代表是一个插入操作
+   3. appendPlacementNodeIntoContainer
       1. 如果当前 fiber 是 Host 节点，直接 appendChildToContainer(宿主环境方法)
       2. 如果不是，DFS遍历 fiber 的 child 和所有 sibling
 2. commitUpdate

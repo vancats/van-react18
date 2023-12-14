@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-labels */
-import { type Container, appendChildToContainer, commitUpdate, removeChild } from 'hostConfig'
+import { type Container, type Instance, appendChildToContainer, commitUpdate, insertChildToContainer, removeChild } from 'hostConfig'
 import type { FiberNode, FiberRootNode } from './fiber'
 import { ChildDeletion, MutationMask, NoFlags, Placement, Update } from './fiberFlags'
 import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
@@ -130,9 +130,11 @@ function commitPlacement(finishedWork: FiberNode) {
     if (__DEV__) {
         console.warn('执行Placement操作', finishedWork)
     }
-    const parentNode = getHostParent(finishedWork)
-    if (parentNode !== null) {
-        appendPlacementNodeIntoContainer(finishedWork, parentNode)
+    const hostParent = getHostParent(finishedWork)
+    const hostSibling = getHostSibling(finishedWork)
+
+    if (hostParent !== null) {
+        insertOrAppendPlacementNodeIntoContainer(finishedWork, hostParent, hostSibling)
     }
 }
 
@@ -153,18 +155,66 @@ function getHostParent(fiber: FiberNode): Container | null {
     return null
 }
 
-function appendPlacementNodeIntoContainer(finishedWork: FiberNode, parentNode: Container) {
+function getHostSibling(finishedWork: FiberNode): Instance | null {
+    let node: FiberNode = finishedWork
+
+    findSibling: while (true) {
+        while (node.sibling === null) {
+            const parent = node.return
+            if (
+                parent === null
+                || parent.tag === HostComponent
+                || parent.tag === HostRoot
+            ) {
+                // 如果是元素节点或者根节点，则不用再找它的兄弟节点了
+                return null
+            }
+            node = parent
+        }
+
+        node.sibling.return = node.return
+        node = node.sibling
+
+        while (node?.tag !== HostText && node.tag !== HostComponent) {
+            if ((node.flags & Placement) !== NoFlags) {
+                continue findSibling
+            }
+            if (node.child === null) {
+                continue findSibling
+            }
+            else {
+                node.child.return = node
+                node = node.child
+            }
+        }
+
+        if ((node.flags & Placement) === NoFlags) {
+            return node.stateNode
+        }
+    }
+}
+
+function insertOrAppendPlacementNodeIntoContainer(
+    finishedWork: FiberNode,
+    hostParent: Container,
+    hostSibling?: Instance | null,
+) {
     if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-        appendChildToContainer(parentNode, finishedWork.stateNode)
+        if (hostSibling) {
+            insertChildToContainer(finishedWork.stateNode, hostParent, hostSibling)
+        }
+        else {
+            appendChildToContainer(hostParent, finishedWork.stateNode)
+        }
         return
     }
     const child = finishedWork.child
     // 找到某一层中的 child 和它的 sibling
     if (child) {
-        appendPlacementNodeIntoContainer(child, parentNode)
+        insertOrAppendPlacementNodeIntoContainer(child, hostParent)
         let sibling = child.sibling
         while (sibling !== null) {
-            appendPlacementNodeIntoContainer(sibling, parentNode)
+            insertOrAppendPlacementNodeIntoContainer(sibling, hostParent)
             sibling = sibling.sibling
         }
     }
