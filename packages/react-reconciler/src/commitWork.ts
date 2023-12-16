@@ -62,20 +62,18 @@ function commitDeletion(childToDelete: FiberNode) {
         console.warn('执行Deletion操作', childToDelete)
     }
 
-    let rootHostNode: FiberNode | null = null
+    // 由于Fragment的存在，可能需要删除多个同级节点，因此在找到第一个子节点后，后续的节点需要判断是否为同级，如果同级，则也要被删除
+    const rootChildrenToDelete: FiberNode[] = []
 
     commitNestedComponent(childToDelete, unmountFiber => {
         switch (unmountFiber.tag) {
             case HostComponent:
-                if (rootHostNode === null) {
-                    rootHostNode = unmountFiber
-                }
+                recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)
                 // TODO 解绑ref
                 break
             case HostText:
-                if (rootHostNode === null) {
-                    rootHostNode = unmountFiber
-                }
+                recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)
+
                 break
             case FunctionComponent:
                 // TODO 解绑ref
@@ -88,16 +86,36 @@ function commitDeletion(childToDelete: FiberNode) {
         }
     })
 
-    if (rootHostNode !== null) {
+    if (rootChildrenToDelete.length) {
         const hostParent = getHostParent(childToDelete)
         if (hostParent !== null) {
-            removeChild((rootHostNode as FiberNode).stateNode, hostParent)
+            rootChildrenToDelete.forEach(node => {
+                removeChild(node.stateNode, hostParent)
+            })
         }
     }
 
     // 重置
     childToDelete.return = null
     childToDelete.child = null
+}
+
+function recordHostChildrenToDelete(childrenToDelete: FiberNode[], unmountFiber: FiberNode) {
+    // 1. 找到最后一个 rootHost 节点
+    const lastOne = childrenToDelete[childrenToDelete.length - 1]
+    if (!lastOne) {
+        childrenToDelete.push(unmountFiber)
+    }
+    else {
+        // 2. 每找到一个节点，判断它是不是第一步的兄弟节点
+        let node = lastOne.sibling
+        while (node !== null) {
+            if (unmountFiber === node) {
+                childrenToDelete.push(unmountFiber)
+            }
+            node = node.sibling
+        }
+    }
 }
 
 function commitNestedComponent(
