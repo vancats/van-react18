@@ -1,6 +1,7 @@
 # React-reconcile
-
 > 工作方式: 比较节点的 ReactElement 和 FiberNode ，生成子 FiberNode 和 Flags
+
+## Fiber
 
 ### FiberNode
 1. 实例属性: tag、key、stateNode、type、ref
@@ -29,25 +30,27 @@
 - updateContainer: enqueueUpdate & scheduleUpdateOnFiber
   - 在这里将渲染和更新相连接
 
-# scheduleUpdateOnFiber
+## scheduleUpdateOnFiber
 > workInProgress: 当前节点的替换树
 
 - markUpdateFromFiberToRoot: 找到根节点
 - markRootUpdate: 添加 Lane 到根节点的集合
-- renderRoot
-  - prepareFreshStack: 创建/更新 wip
-  - workLoop: render 阶段
-    - performUnitOfWork: 存在 wip 时一直进行递归操作
-      - beginWork
-      - completeUnitOfWork -> completeWork
-  - 更新 root 上的数据
-  - commitRoot: 根据 finishedWork 的 subtreeFlags 和 flags 确定三个阶段的执行
-    - Mutation 阶段: commitMutationEffects
-    - 此时进行节点树切换
+- ensureRootIsScheduled: 确认需要调度哪一优先级任务
+  - 将 performSyncWorkOnRoot 入队并调用宿主环境的事件
+    - 获取当前任务的最高优先级，如果和当前的不匹配，重新调度 ensureRootIsScheduled
+    - prepareFreshStack: 创建/更新 wip
+    - workLoop: render 阶段
+      - performUnitOfWork: 存在 wip 时一直进行递归操作
+        - beginWork
+        - completeUnitOfWork -> completeWork
+    - 更新 root 上的数据
+    - commitRoot: 根据 finishedWork 的 subtreeFlags 和 flags 确定三个阶段的执行
+      - Mutation 阶段: commitMutationEffects
+      - 此时进行节点树切换
 
 
 
-## beginWork
+### beginWork
 > 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
 > 2. 只标记结构相关副作用: Placement ChildDeletion
 - HostRoot: updateHostRoot
@@ -84,7 +87,7 @@
 
 
 
-## completeWork
+### completeWork
 > 根据 HostComponent 和 HostText 的 FiberNode 构建离屏 DOM 树
 
 - HostComponent
@@ -98,21 +101,21 @@
 
 
 
-## commitWork
+### commitWork
 1. 共有三个阶段，每个阶段各有一个副作用Mask，判断 finishedWork 的 subtreeFlags 和 flags
    1. beforeMutation
    2. Mutation: commitMutationEffects
    3. Layout
 2. 获取 finishedWork 并切换
 
-### commitMutationEffects
+#### commitMutationEffects
 1. 向下DFS找到 subtreeFlags 为 NoFlags 的 FiberNode
 2. commitMutationEffectsOnFiber
 3. 向右向上DFS
    1. 寻找 sibling 再次向下DFS
    2. 处理 return 节点
 
-#### commitMutationEffectsOnFiber
+##### commitMutationEffectsOnFiber
 > 拿到对应的副作用，进行增删改
 1. commitPlacement
    1. getHostParent 找到父节点的原生节点
@@ -186,9 +189,17 @@
    1. 在创建 Update 时在 FiberRootNode 的 Lane 集合中添加对应 Lane
    2. 在 schedule 阶段选出一个 Lane 进行后续的 render 和 commit
    3. 在 commit 阶段结束后，从 FiberRootNode 中移除这个 Lane
-
-**方法**
-1. mergeLanes: 创建Lane的集合
-2. requestUpdateLane: 生成一个对应的 Lane
-3. getHighestPriorityLane: 获取当前优先级最高的 Lane
+4. mergeLanes: 创建Lane的集合
+5. requestUpdateLane: 生成一个对应的 Lane
+6. getHighestPriorityLane: 获取当前优先级最高的 Lane
    1. 约定: 值越小优先级越高
+
+### 合并任务的更新
+> 实现微任务或宏任务的形式，需要在宿主环境中实现: scheduleMicroTask
+
+- isFlushingSyncQueue: 是否正在执行
+- syncQueue: 同步任务队列
+- scheduleSyncCallback: 入队操作
+- flushSyncCallbacks: 执行同步任务队列
+
+

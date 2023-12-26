@@ -1,9 +1,11 @@
+import { scheduleMicroTask } from 'hostConfig'
 import { beginWork } from './beginWork'
 import { commitMutationEffects } from './commitWork'
 import { completeWork } from './completeWork'
 import { type FiberNode, type FiberRootNode, createWorkInProgress } from './fiber'
 import { MutationMask, NoFlags } from './fiberFlags'
-import { type Lane, mergeLanes } from './fiberLanes'
+import { type Lane, NoLane, SyncLane, getHighestPriorityLane, mergeLanes } from './fiberLanes'
+import { flushSyncCallbacks, scheduleSyncCallback } from './syncTaskQueue'
 import { HostRoot } from './workTags'
 
 let workInProgress: FiberNode | null = null
@@ -34,10 +36,37 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
     const root = markUpdateFromFiberToRoot(fiber)
     // 在根节点的 Lane 集合上添加当前的 Lane
     markRootUpdated(root, lane)
-    renderRoot(root)
+    ensureRootIsScheduled(root)
 }
 
-function renderRoot(root: FiberRootNode) {
+function ensureRootIsScheduled(root: FiberRootNode) {
+    const updateLane = getHighestPriorityLane(root.pendingLanes)
+    if (updateLane === NoLane) {
+        return
+    }
+
+    if (updateLane === SyncLane) {
+        // 同步任务优先级，走微任务调度
+        if (__DEV__) {
+            console.warn('当前是微任务调度吗，优先级：', updateLane)
+        }
+        // 入队
+        scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane))
+        // 调度微任务
+        scheduleMicroTask(flushSyncCallbacks)
+    }
+    else {
+        // 其他优先级宏任务调度
+    }
+}
+
+function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
+    const nextLane = getHighestPriorityLane(root.finishedLane)
+    if (nextLane !== SyncLane) {
+        ensureRootIsScheduled(root)
+        return
+    }
+
     prepareFreshStack(root)
 
     try {
