@@ -12,6 +12,8 @@
 1. container: 配置 hostConfig 实现各宿主的不同容器
 2. current: hostRootFiber
 3. finishedWork: 更新完成之后的 hostRootFiber
+4. pendingLanes: 所有没被消费的 Lane 的集合
+5. finishedLane: 本次更新消费的 Lane
 
 ### Update
 - enqueueUpdate
@@ -129,3 +131,31 @@
 4. HooksDispatcherOnUpdate: update 时的 hooks 集合
    1. updateState
       1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据
+
+
+
+
+## 如何实现批处理
+> 1. 需要实现一套优先级机制，每个更新拥有自己的优先级
+> 2. 能够合并一次宏任务/微任务中的所有更新
+> 3. 需要一套算法来决定哪个优先级进入 render 阶段
+
+### Lane
+> Lane: 优先级
+    > NoLane
+    > SyncLane
+> Lanes: Lane的集合
+    > NoLanes
+
+1. 创建 Update 时就已经确定了 Lane 的优先级
+2. 在 FiberRootNode 上新增
+   1. 所有未被消费的 Lane 的集合
+   2. 本次需要被消费的 Lane
+3. 操作流程
+   1. 在创建 Update 时在 FiberRootNode 的 Lane 集合中添加对应 Lane
+   2. 在 schedule 阶段选出一个 Lane 进行后续的 render 和 commit
+   3. 在 commit 阶段结束后，从 FiberRootNode 中移除这个 Lane
+
+**方法**
+1. mergeLanes: 创建Lane的集合
+2. requestUpdateLane: 生成一个对应的 Lane

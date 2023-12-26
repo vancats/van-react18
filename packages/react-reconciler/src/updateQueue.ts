@@ -1,8 +1,10 @@
 import type { Dispatch } from 'react/src/currentDispatcher'
 import type { Action } from 'shared/ReactType'
+import type { Lane } from './fiberLanes'
 
 export interface Update<State> {
     action: Action<State>
+    lane: Lane
     next: Update<any> | null
 }
 
@@ -13,9 +15,10 @@ export interface UpdateQueue<State> {
     dispatch: Dispatch<State> | null
 }
 
-export function createUpdate<State>(action: Action<State>): Update<State> {
+export function createUpdate<State>(action: Action<State>, lane: Lane): Update<State> {
     return {
         action,
+        lane,
         next: null,
     }
 }
