@@ -32,6 +32,7 @@
 
 ## scheduleUpdateOnFiber
 > workInProgress: 当前节点的替换树
+> wipRootRenderLane: 当前执行的优先级
 
 - markUpdateFromFiberToRoot: 找到根节点
 - markRootUpdate: 添加 Lane 到根节点的集合
@@ -158,11 +159,12 @@
 1. currentlyRenderingFiber: 当前正在活动的 fiber
 2. workInProgressHook: 当前正在处理的 hook
 3. currentHook: current 中对应的 hook
-4. HooksDispatcherOnMount: mount 时的 hooks 集合
+4. renderLine: 当前的优先级
+5. HooksDispatcherOnMount: mount 时的 hooks 集合
    1. mountState
       1. mountWorkInProgressHook: 创建当前的 hook
       2. dispatchSetState: 将 hooks 接入现有的更新流程中，并且保存到 updateQueue 中以便更新时获取
-5. HooksDispatcherOnUpdate: update 时的 hooks 集合
+6. HooksDispatcherOnUpdate: update 时的 hooks 集合
    1. updateState
       1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据
 
@@ -193,6 +195,7 @@
 5. requestUpdateLane: 生成一个对应的 Lane
 6. getHighestPriorityLane: 获取当前优先级最高的 Lane
    1. 约定: 值越小优先级越高
+7. markRootFinished: 取出 root 中该优先级
 
 ### 合并任务的更新
 > 实现微任务或宏任务的形式，需要在宿主环境中实现: scheduleMicroTask

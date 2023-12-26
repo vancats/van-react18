@@ -4,19 +4,20 @@ import type { FiberNode } from './fiber'
 import { type UpdateQueue, processUpdateQueue } from './updateQueue'
 import { Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
 import { renderWithHooks } from './fiberHooks'
+import type { Lane } from './fiberLanes'
 
 /**
  * 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
  * 2. 只标记结构相关副作用：Placement ChildDeletion
  */
-export const beginWork = (wip: FiberNode) => {
+export const beginWork = (wip: FiberNode, renderLane: Lane) => {
     switch (wip.tag) {
         case HostRoot:
-            return updateHostRoot(wip)
+            return updateHostRoot(wip, renderLane)
         case HostComponent:
             return updateHostComponent(wip)
         case FunctionComponent:
-            return updateFunctionComponent(wip)
+            return updateFunctionComponent(wip, renderLane)
         case Fragment:
             return updateFragment(wip)
         case HostText:
@@ -29,7 +30,7 @@ export const beginWork = (wip: FiberNode) => {
     return null
 }
 
-function updateHostRoot(wip: FiberNode) {
+function updateHostRoot(wip: FiberNode, renderLane: Lane) {
     // 之前的 state 状态，在 mount 时不存在
     const baseState = wip.memoizedState
     const updateQueue = wip.updateQueue as UpdateQueue<ReactElementType>
@@ -37,7 +38,7 @@ function updateHostRoot(wip: FiberNode) {
     updateQueue.shared.pending = null
 
     // mount 传入的 action 实际上是<App />的ReactElement
-    const { memoizedState } = processUpdateQueue(baseState, pending)
+    const { memoizedState } = processUpdateQueue(baseState, pending, renderLane)
     wip.memoizedState = memoizedState
 
     const nextChildren = memoizedState
@@ -52,8 +53,8 @@ function updateHostComponent(wip: FiberNode) {
     return wip.child
 }
 
-function updateFunctionComponent(wip: FiberNode) {
-    const nextChildren = renderWithHooks(wip)
+function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
+    const nextChildren = renderWithHooks(wip, renderLane)
     reconcileChildren(wip, nextChildren)
     return wip.child
 }

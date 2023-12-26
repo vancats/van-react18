@@ -32,7 +32,7 @@ export default [
             ...getBaseRollupPlugins(),
             alias({
                 entries: {
-                    // tsConfig 中添加的路径只是为了类型检查吗，这里需要重新指定 hostConfig 位置
+                    // tsConfig 中添加的路径只是为了类型检查，这里需要重新指定 hostConfig 位置
                     hostConfig: `${pkgPath}/src/hostConfig.ts`,
                 },
             }),

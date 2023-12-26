@@ -22,8 +22,13 @@ function App() {
     </>
 
     const arr3 = <ul
-        onClickCapture={() => setNum(num + 1)}
+        onClickCapture={() => {
+            setNum((num) => num + 1)
+            setNum((num) => num + 1)
+            setNum((num) => num + 1)
+        }}
     >
+        {num}
         {arr2}
         <li>6</li>
         <li>7</li>

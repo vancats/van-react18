@@ -4,14 +4,17 @@ import { commitMutationEffects } from './commitWork'
 import { completeWork } from './completeWork'
 import { type FiberNode, type FiberRootNode, createWorkInProgress } from './fiber'
 import { MutationMask, NoFlags } from './fiberFlags'
-import { type Lane, NoLane, SyncLane, getHighestPriorityLane, mergeLanes } from './fiberLanes'
+import { type Lane, NoLane, SyncLane, getHighestPriorityLane, markRootFinished, mergeLanes } from './fiberLanes'
 import { flushSyncCallbacks, scheduleSyncCallback } from './syncTaskQueue'
 import { HostRoot } from './workTags'
 
 let workInProgress: FiberNode | null = null
-function prepareFreshStack(root: FiberRootNode) {
+let wipRootRenderLane: Lane = NoLane
+
+function prepareFreshStack(root: FiberRootNode, lane: Lane) {
     // 创建/更新 wip
     workInProgress = createWorkInProgress(root.current, {})
+    wipRootRenderLane = lane
 }
 
 function markUpdateFromFiberToRoot(fiber: FiberNode) {
@@ -48,7 +51,7 @@ function ensureRootIsScheduled(root: FiberRootNode) {
     if (updateLane === SyncLane) {
         // 同步任务优先级，走微任务调度
         if (__DEV__) {
-            console.warn('当前是微任务调度吗，优先级：', updateLane)
+            console.warn('当前是微任务调度，优先级：', updateLane)
         }
         // 入队
         scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane))
@@ -61,13 +64,17 @@ function ensureRootIsScheduled(root: FiberRootNode) {
 }
 
 function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
-    const nextLane = getHighestPriorityLane(root.finishedLane)
+    const nextLane = getHighestPriorityLane(root.pendingLanes)
     if (nextLane !== SyncLane) {
         ensureRootIsScheduled(root)
         return
     }
 
-    prepareFreshStack(root)
+    if (__DEV__) {
+        console.warn('render阶段开始', root)
+    }
+
+    prepareFreshStack(root, lane)
 
     try {
         workLoop()
@@ -82,6 +89,8 @@ function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
     // 这个就是 wip
     const finishedWork = root.current.alternate
     root.finishedWork = finishedWork
+    root.finishedLane = lane
+    wipRootRenderLane = NoLane
 
     commitRoot(root)
 }
@@ -95,8 +104,16 @@ function commitRoot(root: FiberRootNode) {
         console.warn('commit阶段开始', finishedWork)
     }
 
+    const lane = root.finishedLane
+    if (lane === NoLane && __DEV__) {
+        console.error('commit阶段finishedLane不应该是NoLane')
+    }
+
     // 重置操作
     root.finishedWork = null
+    root.finishedLane = NoLane
+
+    markRootFinished(root, lane)
 
     const subtreeHasEffect = (finishedWork.subtreeFlags & MutationMask) !== NoFlags
     const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags
@@ -119,7 +136,7 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
-    const next = beginWork(fiber)
+    const next = beginWork(fiber, wipRootRenderLane)
     // beginWork 执行后，pendingProps可以更新为memoizedProps
     fiber.memoizedProps = fiber.pendingProps
 
