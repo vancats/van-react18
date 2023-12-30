@@ -10,7 +10,8 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "build:dev": "rimraf dist && rollup --bundleConfigAsCjs --config scripts/rollup/dev.config.js",
-        "demo": "vite serve demos/test-fc --config scripts/vite/vite.config.js --force",
+        "fc": "vite serve demos/test-fc --config scripts/vite/vite.config.js --force",
+        "concurrency": "vite serve demos/test-concurrency --config scripts/vite/vite.config.js --force",
         "test": "jest --config scripts/jest/jest.config.js"
     },
     "dependencies": {

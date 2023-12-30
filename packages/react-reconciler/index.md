@@ -258,3 +258,35 @@
 - flushSyncCallbacks: 执行同步任务队列
 
 
+
+
+## 并发更新
+
+### 当前的调度实现
+> 循环的驱动力是微任务调度模块
+1. 交互触发更新: 首屏渲染 + Hooks
+2. 调度阶段，微任务调度 ensureRootIsScheduled
+3. 调度结束，进入 render 阶段
+4. render 结束，进入 commit 阶段
+5. commit 结束，重新调度微任务 ensureRootIsScheduled
+
+### 实现并发操作
+> prevPriority: 上一个未执行完成 work 的优先级或者 IdlePriority
+> curCallback: 当前在执行的 callback
+
+1. schedule 阶段
+   1. 先选出当前优先级最高的 work
+   2. 如果 work 不存在，cancel 当前的 callbackNode，直接返回
+   3. 如果 work 优先级和 prevPriority 相等，直接返回（后续逻辑会在 perform 中执行）
+   4. 如果 work 优先级更高，cancel 当前的 callbackNode，重新执行 scheduleCallback，返回值会赋给 curCallback
+2. perform 阶段
+   1. 考虑是否可以继续执行
+      1. 优先级: 如果是同步任务，执行
+      2. 饥饿问题: 如果任务已过期，优先级会提高并执行（这个是 Scheduler 内部的操作）
+      3. 时间切片: 是否还有剩余的时间
+   2. 把当前的 work 优先级赋值给 prevPriority，和 schedule 的第三步相关
+   3. 如果 work 已经执行结束了，从 list 中去除它，并且重置 prevPriority
+   4. 取到当前的 callback
+   5. 调用 schedule 函数
+   6. 取到当前的 callback
+   7. 如果第六步有值并且和第四步的相同，那么代表 schedule 阶段在第三步时返回了，最新的任务和当前任务优先级一致，那么直接继续执行当前任务即可
