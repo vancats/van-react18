@@ -29,8 +29,7 @@ export const commitUpdate = (fiber: FiberNode) => {
         case HostText:
             return commitTextUpdate(fiber.stateNode, fiber.pendingProps.content)
         case HostComponent:
-            // TODO 处理一些更新Props的流程
-            return
+            return updateFiberProps(fiber.stateNode, fiber.memoizedProps)
         default:
             if (__DEV__) {
                 console.warn('未实现的update类型', fiber)

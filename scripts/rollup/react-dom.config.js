@@ -27,7 +27,7 @@ export default [
             },
         ],
         // 不打包React中的代码，比如内部数据共享层数据如果打包进来，就会出现两份
-        external: [...Object.keys(peerDependencies)],
+        external: [...Object.keys(peerDependencies), 'scheduler'],
         plugins: [
             ...getBaseRollupPlugins(),
             alias({
