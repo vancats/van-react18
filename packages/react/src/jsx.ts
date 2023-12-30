@@ -21,7 +21,7 @@ export function isValidElement(object: any): object is ReactElementType {
     )
 }
 
-export const jsx = (
+export const createElement = (
     type: ElementType,
     config: any,
     ...maybeChildren: any
@@ -55,13 +55,19 @@ export const jsx = (
     return ReactElement(type, key, ref, props)
 }
 
-export const jsxDEV = (
+export const jsx = (
     type: ElementType,
     config: any,
+    maybeKey: any,
 ) => {
     let key: Key = null
     let ref: Ref = null
     const props: Props = {}
+
+    if (maybeKey !== undefined) {
+        key = `${maybeKey}`
+    }
+
     for (const prop in config) {
         const val = config[prop]
         if (val !== undefined) {
@@ -81,4 +87,5 @@ export const jsxDEV = (
     return ReactElement(type, key, ref, props)
 }
 
+export const jsxDEV = jsx
 export const Fragment = REACT_FRAGMENT_TYPE
