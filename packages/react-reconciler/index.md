@@ -15,6 +15,7 @@
 3. finishedWork: 更新完成之后的 hostRootFiber
 4. pendingLanes: 所有没被消费的 Lane 的集合
 5. finishedLane: 本次更新消费的 Lane
+6. pendingPassiveEffects: 收集所有的 update 和 unmount 的 Effect
 
 
 ### UpdateQueue
@@ -33,6 +34,7 @@
 ## scheduleUpdateOnFiber
 > workInProgress: 当前节点的替换树
 > wipRootRenderLane: 当前执行的优先级
+> rootDoesHasPassiveEffect: 当前是否处于 Passive 流程中
 
 - markUpdateFromFiberToRoot: 找到根节点
 - markRootUpdate: 添加 Lane 到根节点的集合
@@ -46,6 +48,8 @@
         - completeUnitOfWork -> completeWork
     - 更新 root 上的数据
     - commitRoot: 根据 finishedWork 的 subtreeFlags 和 flags 确定三个阶段的执行
+      - markRootFinished
+      - 调度执行 flushPassiveEffects: 执行 root.pendingPassiveEffects 中收集的 effect
       - Mutation 阶段: commitMutationEffects
       - 此时进行节点树切换
 
@@ -133,7 +137,13 @@
    2. commitNestedComponent
       1. 递归遍历每一项，每次都需要执行参数中的 onCommitUnmount
       2. 在回调中统一执行一些卸载和解绑操作，并更新获得该子节点的 host 节点
+      3. 在卸载的过程中，需要收集 effect 回调
    3. 移除该 host 节点的DOM
+4. commitPassiveEffect
+> 如果标记了 PassiveEffect，需要收集 effect 回调
+   1. 如果 fiber.tag 不是FC或者当前是 update 但是没有标记 PassiveEffect，则不收集
+   2. 取出 fiber 中的 updateQueue，其中的 lastEffect 是 effect 的链表
+   3. 把这个链表存储到 root 的 pendingPassiveEffects 的 update 数组中
 
 
 
@@ -152,21 +162,63 @@
 
 ### memoizedState
 - FC 中的指向 hooks 链表
-- 每个 Hooks 中存储 hook 数据
 - HostRoot 中存储的是 <App /> 的ReactElement
+- Hooks 中存储对应数据
+  - useState: state 数据
+  - useEffect
+    - tag: HookFlags
+    - create、destroy、deps
+    - next: 指向的是下一个 effect 的 memoizedState，当前 Hook 中的所有 effect 形成的环状链表，可以直接循环遍历，
 
 ### 实现 Hooks结构
-1. currentlyRenderingFiber: 当前正在活动的 fiber
-2. workInProgressHook: 当前正在处理的 hook
-3. currentHook: current 中对应的 hook
-4. renderLine: 当前的优先级
-5. HooksDispatcherOnMount: mount 时的 hooks 集合
+1. 外部变量，注意每次都要重置
+   1. currentlyRenderingFiber: 当前正在活动的 fiber
+   2. workInProgressHook: 当前正在处理的 hook
+   3. currentHook: current 中对应的 hook
+   4. renderLane: 当前的优先级
+   5. 此外，wip 上的 memoizedState 和 updateQueue 都需要重置，分别代表 hooks 和 effect 链表
+2. HooksDispatcherOnMount: mount 时的 hooks 集合
    1. mountState
       1. mountWorkInProgressHook: 创建当前的 hook
       2. dispatchSetState: 将 hooks 接入现有的更新流程中，并且保存到 updateQueue 中以便更新时获取
-6. HooksDispatcherOnUpdate: update 时的 hooks 集合
+    2. mountEffect
+       1. 创建 hook，标记 PassiveEffect，创建 effect 并形成环状链表
+3. HooksDispatcherOnUpdate: update 时的 hooks 集合
    1. updateState
       1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据
+   2. updateEffect
+      1. 先获取到当前对应的 prevEffect，它在 currentHook 的 memoizedState 上
+      2. 浅比较 nextDeps: areHookInputsEqual
+      3. 如果相等，pushEffect 中只有 Passive
+      4. 如果不相等，先对 Hook 标记 PassiveEffect，在 pushEffect 中加入 HookHasEffect
+
+
+#### useEffect
+> useEffect、useLayoutEffect、useInsertingEffect
+**目标**
+1. 需要保存依赖
+2. 保存 create 和 destroy 回调
+3. 在 mount 时和依赖变化时需要区分是否需要触发 create 回调
+
+**实现**
+1. Tags:
+   1. HookHasEffect: 代表需要触发回调
+   2. Passive: 代表 useEffect
+   3. Layout: 代表 useLayoutEffect
+2. PassiveMask: 代表本次更新需要触发 useEffect 回调
+   - PassiveEffect | ChildDeletion
+3. pushEffect: 创建 Effect 并且生成环状链表
+4. FCUpdateQueue
+   1. lastEffect: 环状链表的最后一项
+5. commitPassiveEffect 收集回调
+   1. 在 commitMutationEffectsOnFiber 中存在 PassiveEffect 时存入 update 中
+   2. commitDeletion 时存入 unmount 中
+6. flushPassiveEffects 执行副作用
+   1. commitHookEffectListUnmount 触发 unmount，对 unmount 进行卸载，这时候要删除 effect.tag 上的 HookHasEffect
+   2. commitHookEffectListDestroy 触发 destroy，对 update 执行 destroy
+   3. commitHookEffectListCreate 触发 create，对 update 执行 create
+   4. 对于回调过程中触发的更新，比如在 effect 中 setState，需要再次执行 flushSyncCallback
+   5. 注意要清空 pendingPassiveEffects
 
 
 

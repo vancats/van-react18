@@ -1,44 +1,37 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 
 function App() {
-    const [num, setNum] = useState(100)
+    const [num, updateNum] = useState(0)
+    useEffect(() => {
+        console.log('App mount')
+    }, [])
 
-    const arr = num % 2 === 0
-        ? [
-            <li key="1">1</li>,
-            <li key="2">2</li>,
-            <li key="3">3</li>,
-        ]
-        : [
-            <li key="3">3</li>,
-            <li key="2">2</li>,
-            <li key="1">1</li>,
-        ]
+    useEffect(() => {
+        console.log('App mount or update')
+    })
 
-    const arr2 = <>
-        <li>4</li>
-        <li>5</li>
-    </>
+    useEffect(() => {
+        console.log('num change create', num)
+        return () => {
+            console.log('num change destroy', num)
+        }
+    }, [num])
 
-    const arr3 = <ul
-        onClickCapture={() => {
-            setNum((num) => num + 1)
-            setNum((num) => num + 1)
-            setNum((num) => num + 1)
-        }}
-    >
-        {num}
-        {arr2}
-        <li>6</li>
-        <li>7</li>
-        {arr}
-    </ul>
-    return arr3
+    return (
+        <div onClick={() => updateNum(num => num + 1)}>
+            {num % 2 === 0 ? <Child /> : 'noop'}
+        </div>
+    )
 }
 
 function Child() {
-    return <span>vancats</span>
+    useEffect(() => {
+        console.log('child mount')
+        return () => console.log('child unmount')
+    }, [])
+
+    return 'I am child'
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App />)

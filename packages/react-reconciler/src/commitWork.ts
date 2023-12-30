@@ -1,23 +1,26 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-labels */
 import { type Container, type Instance, appendChildToContainer, commitUpdate, insertChildToContainer, removeChild } from 'hostConfig'
-import type { FiberNode, FiberRootNode } from './fiber'
-import { ChildDeletion, MutationMask, NoFlags, Placement, Update } from './fiberFlags'
+import type { FiberNode, FiberRootNode, PendingPassiveEffects } from './fiber'
+import { ChildDeletion, MutationMask, NoFlags, PassiveEffect, PassiveMask, Placement, Update } from './fiberFlags'
 import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
+import type { Effect, FCUpdateQueue } from './fiberHooks'
+import type { HookFlags } from './hookEffectTags'
+import { HasEffect } from './hookEffectTags'
 
 let nextEffect: FiberNode | null = null
-export function commitMutationEffects(finishedWork: FiberNode) {
+export function commitMutationEffects(finishedWork: FiberNode, root: FiberRootNode) {
     nextEffect = finishedWork
     while (nextEffect !== null) {
         const child: FiberNode | null = nextEffect.child
         // 如果子节点中还含有Mutation阶段副作用，向下
-        if ((nextEffect.subtreeFlags & MutationMask) !== NoFlags && child !== null) {
+        if ((nextEffect.subtreeFlags & (MutationMask | PassiveMask)) !== NoFlags && child !== null) {
             nextEffect = child
         }
         else {
             up: while (nextEffect !== null) {
                 // 对当前节点进行 mutation 操作
-                commitMutationEffectsOnFiber(nextEffect)
+                commitMutationEffectsOnFiber(nextEffect, root)
                 // 向右向上遍历
                 const sibling: FiberNode | null = nextEffect.sibling
                 if (sibling !== null) {
@@ -30,7 +33,7 @@ export function commitMutationEffects(finishedWork: FiberNode) {
     }
 }
 
-function commitMutationEffectsOnFiber(finishedWork: FiberNode) {
+function commitMutationEffectsOnFiber(finishedWork: FiberNode, root: FiberRootNode) {
     const flags = finishedWork.flags
     /// Placement
     if ((flags & Placement) !== NoFlags) {
@@ -50,10 +53,16 @@ function commitMutationEffectsOnFiber(finishedWork: FiberNode) {
     if ((flags & ChildDeletion) !== NoFlags) {
         const deletions = finishedWork.deletions
         if (deletions !== null) {
-            deletions.forEach(commitDeletion)
+            deletions.forEach(deletion => commitDeletion(deletion, root))
         }
         // 消除副作用
         finishedWork.flags &= ~ChildDeletion
+    }
+
+    /// PassiveEffect
+    if ((flags & PassiveEffect) !== NoFlags) {
+        commitPassiveEffect(finishedWork, root, 'update')
+        finishedWork.flags &= ~PassiveEffect
     }
 }
 
@@ -151,7 +160,7 @@ function insertOrAppendPlacementNodeIntoContainer(
     }
 }
 
-function commitDeletion(childToDelete: FiberNode) {
+function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
     if (__DEV__) {
         console.warn('执行Deletion操作', childToDelete)
     }
@@ -170,8 +179,8 @@ function commitDeletion(childToDelete: FiberNode) {
 
                 break
             case FunctionComponent:
+                commitPassiveEffect(unmountFiber, root, 'unmount')
                 // TODO 解绑ref
-                // TODO useEffect unmount
                 break
             default:
                 if (__DEV__) {
@@ -236,4 +245,53 @@ function recordHostChildrenToDelete(childrenToDelete: FiberNode[], unmountFiber:
             node = node.sibling
         }
     }
+}
+
+function commitPassiveEffect(finishedWork: FiberNode, root: FiberRootNode, type: keyof PendingPassiveEffects) {
+    if (finishedWork.tag !== FunctionComponent || (type === 'update' && (finishedWork.flags & PassiveEffect) === NoFlags)) {
+        return
+    }
+    const updateQueue = finishedWork.updateQueue as FCUpdateQueue<any>
+    if (updateQueue.lastEffect === null && __DEV__) {
+        console.error('当FC 存在PassiveEffect，不应该不存在effect')
+    }
+    root.pendingPassiveEffects[type].push(updateQueue.lastEffect!)
+}
+
+function commitHookEffectList(flags: HookFlags, lastEffect: Effect, callback: (effect: Effect) => void) {
+    let effect = lastEffect.next!
+    do {
+        if ((effect.tag & flags) === flags) {
+            callback(effect)
+        }
+        effect = effect.next!
+    } while (effect !== lastEffect.next)
+}
+
+export function commitHookEffectListUnmount(flags: HookFlags, lastEffect: Effect) {
+    commitHookEffectList(flags, lastEffect, effect => {
+        const destroy = effect.destroy
+        if (typeof destroy === 'function') {
+            destroy()
+        }
+        effect.tag &= ~HasEffect
+    })
+}
+
+export function commitHookEffectListDestroy(flags: HookFlags, lastEffect: Effect) {
+    commitHookEffectList(flags, lastEffect, effect => {
+        const destroy = effect.destroy
+        if (typeof destroy === 'function') {
+            destroy()
+        }
+    })
+}
+
+export function commitHookEffectListCreate(flags: HookFlags, lastEffect: Effect) {
+    commitHookEffectList(flags, lastEffect, effect => {
+        const create = effect.create
+        if (typeof create === 'function') {
+            effect.destroy = create()
+        }
+    })
 }

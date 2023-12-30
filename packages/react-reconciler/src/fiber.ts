@@ -5,6 +5,7 @@ import type { Flags } from './fiberFlags'
 import { NoFlags } from './fiberFlags'
 import type { Lane, Lanes } from './fiberLanes'
 import { NoLane, NoLanes } from './fiberLanes'
+import type { Effect } from './fiberHooks'
 
 export class FiberNode {
     tag: WorkTag
@@ -52,20 +53,31 @@ export class FiberNode {
     }
 }
 
+export interface PendingPassiveEffects {
+    update: Effect[]
+    unmount: Effect[]
+}
+
 export class FiberRootNode {
     container: Container
     current: FiberNode
     finishedWork: FiberNode | null
     pendingLanes: Lanes
     finishedLane: Lane
+    pendingPassiveEffects: PendingPassiveEffects
 
     constructor(container: Container, hostRootFiber: FiberNode) {
         this.container = container
         this.current = hostRootFiber
+        hostRootFiber.stateNode = this
+
         this.finishedWork = null
         this.pendingLanes = NoLanes
         this.finishedLane = NoLane
-        hostRootFiber.stateNode = this
+        this.pendingPassiveEffects = {
+            update: [],
+            unmount: [],
+        }
     }
 }
 
