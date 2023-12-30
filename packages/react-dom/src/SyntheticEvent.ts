@@ -1,5 +1,5 @@
 import type { Container } from 'hostConfig'
-import type { Props } from 'shared/ReactType'
+import type { Props } from 'shared/ReactTypes'
 
 export const elementPropsKey = '__props'
 const validSyntheticEvents = ['click']

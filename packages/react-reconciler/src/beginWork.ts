@@ -1,4 +1,4 @@
-import type { ReactElementType } from 'shared/ReactType'
+import type { ReactElementType } from 'shared/ReactTypes'
 import { mountChildFibers, reconcileChildFibers } from './childFibers'
 import type { FiberNode } from './fiber'
 import { type UpdateQueue, processUpdateQueue } from './updateQueue'

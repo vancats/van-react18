@@ -1,5 +1,5 @@
 import type { Container } from 'hostConfig'
-import type { ReactElementType } from 'shared/ReactType'
+import type { ReactElementType } from 'shared/ReactTypes'
 import { FiberNode, FiberRootNode } from './fiber'
 import { HostRoot } from './workTags'
 import type { UpdateQueue } from './updateQueue'

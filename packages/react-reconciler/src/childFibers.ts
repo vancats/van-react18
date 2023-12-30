@@ -1,4 +1,4 @@
-import type { Key, Props, ReactElementType } from 'shared/ReactType'
+import type { Key, Props, ReactElementType } from 'shared/ReactTypes'
 import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols'
 import { FiberNode, createFiberFromElement, createFiberFromFragment, createWorkInProgress } from './fiber'
 import { ChildDeletion, Placement } from './fiberFlags'

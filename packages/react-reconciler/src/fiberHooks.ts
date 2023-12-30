@@ -1,6 +1,6 @@
 import internals from 'shared/internals'
 import type { Dispatch, Dispatcher } from 'react/src/currentDispatcher'
-import type { Action } from 'shared/ReactType'
+import type { Action } from 'shared/ReactTypes'
 import type { FiberNode } from './fiber'
 import type { UpdateQueue } from './updateQueue'
 import { createUpdate, createUpdateQueue, enqueueUpdate, processUpdateQueue } from './updateQueue'

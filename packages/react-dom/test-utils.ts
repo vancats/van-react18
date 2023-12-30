@@ -1,4 +1,4 @@
-import type { ReactElementType } from 'shared/ReactType'
+import type { ReactElementType } from 'shared/ReactTypes'
 
 /// 对于 test 文件来说，React和ReactDOM都应该是外部依赖，不应该内部引入
 // @ts-ignore

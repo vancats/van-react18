@@ -1,5 +1,5 @@
-import { createContainer, updateContainer } from 'react-reconciler/src/fiberReconcile'
-import type { ReactElementType } from 'shared/ReactType'
+import { createContainer, updateContainer } from 'react-reconciler/src/fiberReconciler'
+import type { ReactElementType } from 'shared/ReactTypes'
 import type { Container } from './hostConfig'
 import { initEvent } from './SyntheticEvent'
 

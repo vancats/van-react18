@@ -1,5 +1,5 @@
-import { createContainer, updateContainer } from 'react-reconciler/src/fiberReconcile'
-import type { ReactElementType } from 'shared/ReactType'
+import { createContainer, updateContainer } from 'react-reconciler/src/fiberReconciler'
+import type { ReactElementType } from 'shared/ReactTypes'
 import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols'
 import type { Container, Instance } from './hostConfig'
 
