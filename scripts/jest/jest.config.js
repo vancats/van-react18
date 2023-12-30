@@ -11,4 +11,13 @@ module.exports = {
         ...defaults.moduleDirectories,
     ],
     testEnvironment: 'jsdom',
+    moduleNameMapper: {
+        // 测试专用的 mock 包
+        '^scheduler$': '<rootDir>/node_modules/scheduler/unstable_mock.js',
+    },
+    fakeTimers: {
+        enableGlobally: true,
+        legacyFakeTimers: true,
+    },
+    setupFilesAfterEnv: ['./scripts/jest/setupJest.js'],
 }

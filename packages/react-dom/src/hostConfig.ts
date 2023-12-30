@@ -27,7 +27,7 @@ export const appendChildToContainer = appendInitialChild
 export const commitUpdate = (fiber: FiberNode) => {
     switch (fiber.tag) {
         case HostText:
-            return commitTextUpdate(fiber.stateNode, fiber.pendingProps.content)
+            return commitTextUpdate(fiber.stateNode, fiber.memoizedProps?.content)
         case HostComponent:
             return updateFiberProps(fiber.stateNode, fiber.memoizedProps)
         default:
