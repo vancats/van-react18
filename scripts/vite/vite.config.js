@@ -29,7 +29,7 @@ export default defineConfig({
             {
                 find: 'hostConfig',
                 // 当前测试使用的包，需要在测试时更新
-                replacement: path.resolve(resolvePkgPath('react-noop-renderer'), './src/hostConfig.ts'),
+                replacement: path.resolve(resolvePkgPath('react-dom'), './src/hostConfig.ts'),
             },
         ],
     },

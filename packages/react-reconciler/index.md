@@ -270,7 +270,7 @@
 4. render 结束，进入 commit 阶段
 5. commit 结束，重新调度微任务 ensureRootIsScheduled
 
-### 实现并发操作
+### 并发操作Demo
 > prevPriority: 上一个未执行完成 work 的优先级或者 IdlePriority
 > curCallback: 当前在执行的 callback
 
@@ -290,3 +290,13 @@
    5. 调用 schedule 函数
    6. 取到当前的 callback
    7. 如果第六步有值并且和第四步的相同，那么代表 schedule 阶段在第三步时返回了，最新的任务和当前任务优先级一致，那么直接继续执行当前任务即可
+
+
+### 实现并发操作
+
+#### 扩展交互
+> Lane 模型中需要增加更多的优先级
+> 交互和优先级需要对应
+- eventTypeToSchedulerPriority
+- lanesToSchedulerPriority
+- schedulerPriorityToLane
