@@ -16,6 +16,8 @@
 4. pendingLanes: 所有没被消费的 Lane 的集合
 5. finishedLane: 本次更新消费的 Lane
 6. pendingPassiveEffects: 收集所有的 update 和 unmount 的 Effect
+7. callbackNode: 当前执行的任务
+8. callbackPriority: 任务执行时的优先级
 
 
 ### UpdateQueue
@@ -35,23 +37,49 @@
 > workInProgress: 当前节点的替换树
 > wipRootRenderLane: 当前执行的优先级
 > rootDoesHasPassiveEffect: 当前是否处于 Passive 流程中
+> RootExitStatus:
+    > RootInComplete 中断执行
+    > RootCompleted 执行结束
+    > RootCompleteError 执行时报错(暂不支持)
 
 - markUpdateFromFiberToRoot: 找到根节点
 - markRootUpdate: 添加 Lane 到根节点的集合
 - ensureRootIsScheduled: 确认需要调度哪一优先级任务
-  - 将 performSyncWorkOnRoot 入队并调用宿主环境的事件
-    - 获取当前任务的最高优先级，如果和当前的不匹配，重新调度 ensureRootIsScheduled
-    - prepareFreshStack: 创建/更新 wip
-    - workLoop: render 阶段
-      - performUnitOfWork: 存在 wip 时一直进行递归操作
-        - beginWork
-        - completeUnitOfWork -> completeWork
-    - 更新 root 上的数据
-    - commitRoot: 根据 finishedWork 的 subtreeFlags 和 flags 确定三个阶段的执行
+  - 如果 updateLane 是 NoLane，cancel root 上的 callbackNode，重置 root 的 callback 相关属性，返回
+  - 如果当前优先级和之前 work 的优先级(root.callbackPriority)一致，直接返回，这时候会走并发流程的重复调用逻辑
+  - 这时候代表有更高优先级的，先 cancel 当前任务
+  - SyncLane, 将 `performSyncWorkOnRoot` 入队并调用宿主环境的事件
+    1. 获取当前任务的最高优先级，如果不是 SyncLane，重新调度 ensureRootIsScheduled
+    2. renderRoot(root, lane, shouldTimeSlice)
+      - prepareFreshStack: 创建/更新 wip，重置 root 的 finished 相关属性
+        - 当 wipRootRenderLane 不等于当前的 lane 时才进行，因为有可能是并发更新时的中断重新执行
+      - render 阶段: 根据 shouldTimeSlice 使用 workLoopSync 或者 workLoopConcurrent
+        - performUnitOfWork: 存在 wip 时一直进行递归操作
+          - beginWork
+          - completeUnitOfWork -> completeWork
+        - 中断的情况: wip !== null 代表工作未执行结束，返回 RootInComplete
+        - 加个错误判断，如果不是并发并且 wip 不为 null，抛错
+        - 返回 RootCompleted，代表执行结束
+
+    3. renderRoot 的返回值是 RootCompleted 才执行后续操作
+    4. 更新 root 上的数据
+    5. commitRoot: 根据 finishedWork 的 subtreeFlags 和 flags 确定三个阶段的执行
       - markRootFinished
       - 调度执行 flushPassiveEffects: 执行 root.pendingPassiveEffects 中收集的 effect
       - Mutation 阶段: commitMutationEffects
       - 此时进行节点树切换
+  - 调度 `performConcurrentWorkOnRoot`，返回值为新的 callbackNode
+    1. 保存当前 root 的 callbackNode
+    2. 先执行 effect 回调，如果执行并且触发了更新，此时如果 root.callbackNode 变化了，代表有优先级更高的任务，直接返回
+    4. 如果当前任务 lane 是 NoLane，直接返回
+    5. 获取是否需要同步并传入到 renderRoot，执行同步流程的第二步
+    6. 重新执行 ensureRootIsScheduled
+    7. 如果状态是 RootInComplete，代表是中断
+    8. 判断 root 此时的 callbackNode 和之前是否一致
+      - 如果不一致，代表开启更高优先级的任务，在 ensureRootIsScheduled 中会重新调度，直接返回
+      - 如果一致，代表继续代表这个回调函数，重新调用 performConcurrentWorkOnRoot
+    9.  如果状态是 RootComplete，逻辑和同步流程的第四第五步一致
+  - 赋值 root callback 的相应属性
 
 
 
