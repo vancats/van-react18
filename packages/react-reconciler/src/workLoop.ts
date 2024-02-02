@@ -237,7 +237,7 @@ function commitRoot(root: FiberRootNode) {
     }
 
     // Mutation 阶段
-    if (hasMask(finishedWork, MutationMask)) {
+    if (hasMask(finishedWork, MutationMask | PassiveMask)) {
         commitMutationEffects(finishedWork, root)
         // 需要进行节点树切换
         root.current = finishedWork
