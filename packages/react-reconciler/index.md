@@ -24,6 +24,17 @@
 - enqueueUpdate
   - 需要实现成链表结构
 - processUpdateQueue
+  - 需要比较优先级是否足够
+  - 要同时兼顾 update 的连续性和 update 的优先级
+- 新增 baseState、baseQueue 字段
+  - baseState 是本次更新参与计算的初始 state; memoizedState 是上次更新计算的最终 state
+  - 考虑到 update 有可能被跳过
+    - 如果没有跳过，两个 state 值想等
+    - 如果跳过了，baseState 是最后一个没有被跳过的 update 计算后的结果，memoizedState 是优先级计算后的结果
+    - 本次更新被跳过的 update 和后面的所有 update 保存在 baseQueue 中用于下次计算
+    - 本次更新参与计算但是保存在 baseQueue 中的 update 优先级被调整为 NoLane，因此在后续的更新中每次都会被计算
+- update 如何保存？
+  - 现有逻辑在打断后，当前 update 计算出的结果未 commit 就被打断，需要将 update 保存在 current 中，即使进行了多次的 render，只要没 commit 就可以恢复数据
 
 
 ### createRoot & render

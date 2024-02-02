@@ -1,6 +1,6 @@
 import type { Dispatch } from 'react/src/currentDispatcher'
 import type { Action } from 'shared/ReactTypes'
-import type { Lane } from './fiberLanes'
+import { type Lane, NoLane, isSubsetOfLanes } from './fiberLanes'
 
 export interface Update<State> {
     action: Action<State>
@@ -53,33 +53,71 @@ export function processUpdateQueue<State>(
     baseState: State,
     pendingUpdate: Update<State> | null,
     renderLane: Lane,
-): { memoizedState: State } {
+): {
+    memoizedState: State
+    baseState: State
+    baseQueue: Update<State> | null
+} {
     const result: ReturnType<typeof processUpdateQueue<State>> = {
         memoizedState: baseState,
+        baseState,
+        baseQueue: null,
     }
 
     if (pendingUpdate !== null) {
         const first = pendingUpdate.next
         let pending = pendingUpdate.next!
+
+        let newState = baseState
+        let newBaseState = baseState
+        let newBaseQueueFirst: Update<State> | null = null
+        let newBaseQueueLast: Update<State> | null = null
+
         do {
             const updateLane = pending.lane
-            if (updateLane === renderLane) {
-                const action = pendingUpdate.action
-                if (action instanceof Function) {
-                    baseState = action(baseState)
+            if (!isSubsetOfLanes(renderLane, updateLane)) {
+                // 优先级不够被跳过
+                const clone = createUpdate(pending.action, pending.lane)
+                if (newBaseQueueLast === null) {
+                    newBaseQueueFirst = clone
+                    newBaseQueueLast = clone
+                    newBaseState = newState
                 }
                 else {
-                    baseState = action
+                    newBaseQueueLast.next = clone
+                    newBaseQueueLast = clone
                 }
             }
             else {
-                if (__DEV__) {
-                    console.error('不应该进入updateLane !== renderLane这个逻辑')
+                if (newBaseQueueLast !== null) {
+                    // update 的优先级被降低到 NoLane
+                    const clone = createUpdate(pending.action, NoLane)
+                    newBaseQueueLast.next = clone
+                    newBaseQueueLast = clone
+                }
+
+                const action = pendingUpdate.action
+                if (action instanceof Function) {
+                    newState = action(baseState)
+                }
+                else {
+                    newState = action
                 }
             }
             pending = pending.next!
         } while (pending !== first)
-        result.memoizedState = baseState
+
+        if (newBaseQueueLast === null) {
+            // 本次计算没有 update 被跳过
+            newBaseState = newState
+        }
+        else {
+            newBaseQueueLast.next = newBaseQueueFirst
+        }
+
+        result.memoizedState = newState
+        result.baseState = newBaseState
+        result.baseQueue = newBaseQueueLast
     }
 
     return result

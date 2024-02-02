@@ -252,10 +252,12 @@ function commitPassiveEffect(finishedWork: FiberNode, root: FiberRootNode, type:
         return
     }
     const updateQueue = finishedWork.updateQueue as FCUpdateQueue<any>
-    if (updateQueue.lastEffect === null && __DEV__) {
-        console.error('当FC 存在PassiveEffect，不应该不存在effect')
+    if (updateQueue !== null) {
+        if (updateQueue.lastEffect === null && __DEV__) {
+            console.error('当FC 存在PassiveEffect，不应该不存在effect')
+        }
+        root.pendingPassiveEffects[type].push(updateQueue.lastEffect!)
     }
-    root.pendingPassiveEffects[type].push(updateQueue.lastEffect!)
 }
 
 function commitHookEffectList(flags: HookFlags, lastEffect: Effect, callback: (effect: Effect) => void) {
