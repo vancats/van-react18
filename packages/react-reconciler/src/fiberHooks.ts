@@ -38,7 +38,7 @@ let workInProgressHook: Hook | null = null
 let currentHook: Hook | null = null
 let renderLane: Lane = NoLane
 
-const { currentDispatcher } = internals
+const { currentDispatcher, currentBatchConfig } = internals
 
 export function renderWithHooks(wip: FiberNode, lane: Lane) {
     // 设置当前环境
@@ -74,11 +74,13 @@ export function renderWithHooks(wip: FiberNode, lane: Lane) {
 const HooksDispatcherOnMount: Dispatcher = {
     useState: mountState,
     useEffect: mountEffect,
+    useTransition: mountTransition,
 }
 
 const HooksDispatcherOnUpdate: Dispatcher = {
     useState: updateState,
     useEffect: updateEffect,
+    useTransition: updateTransition,
 }
 
 function mountState<State>(initialState: State | (() => State)): [State, Dispatch<State>] {
@@ -91,6 +93,7 @@ function mountState<State>(initialState: State | (() => State)): [State, Dispatc
         memoizedState = initialState
     }
     hook.memoizedState = memoizedState
+    hook.baseState = memoizedState
 
     const updateQueue = createUpdateQueue() as UpdateQueue<State>
     hook.updateQueue = updateQueue
@@ -110,6 +113,7 @@ function updateState<State>(): [State, Dispatch<State>] {
     const baseState = hook.baseState
     const current = currentHook!
     let baseQueue = current.baseQueue
+    // 拼接 pending 和 baseQueue
     if (pending !== null) {
         if (baseQueue !== null) {
             const baseFirst = baseQueue.next
@@ -122,21 +126,22 @@ function updateState<State>(): [State, Dispatch<State>] {
         // 保存在 current 中
         current.baseQueue = pending
         updateQueue.shared.pending = null
+    }
 
-        if (baseQueue !== null) {
-            const {
-                memoizedState,
-                baseQueue: newBaseQueue,
-                baseState: newBaseState,
-            } = processUpdateQueue(
-                baseState,
-                baseQueue,
-                renderLane,
-            )
-            hook.memoizedState = memoizedState
-            hook.baseState = newBaseState
-            hook.baseQueue = newBaseQueue
-        }
+    // update 链表不为空，process update 并更新值
+    if (baseQueue !== null) {
+        const {
+            memoizedState,
+            baseQueue: newBaseQueue,
+            baseState: newBaseState,
+        } = processUpdateQueue(
+            baseState,
+            baseQueue,
+            renderLane,
+        )
+        hook.memoizedState = memoizedState
+        hook.baseState = newBaseState
+        hook.baseQueue = newBaseQueue
     }
 
     return [hook.memoizedState, updateQueue.dispatch!]
@@ -173,6 +178,37 @@ function updateEffect(create: EffectCallback, deps: EffectDeps) {
             )
         }
     }
+}
+
+function mountTransition(): [boolean, (callback: () => void) => void] {
+    const [isPending, setPending] = mountState(false)
+    const hook = mountWorkInProgressHook()
+    const start = startTransition.bind(null, setPending)
+    // 进行保存以便 updateTransition 中使用
+    hook.memoizedState = start
+    return [isPending, start]
+}
+
+function updateTransition(): [boolean, (callback: () => void) => void] {
+    const [isPending] = updateState()
+    const hook = updateWorkInProgressHook()
+    const start = hook.memoizedState
+    return [isPending as boolean, start]
+}
+
+function startTransition(setPending: Dispatch<boolean>, callback: () => void) {
+    // 进入 pending 状态
+    setPending(true)
+    // 获取先前 transition 状态
+    const prevTransition = currentBatchConfig.transition
+    // 代表进入了 transition 状态
+    currentBatchConfig.transition = 1
+    // 此时的回调会以 TransitionLane 执行
+    callback()
+
+    setPending(false)
+    // 恢复 transition 状态
+    currentBatchConfig.transition = prevTransition
 }
 
 function pushEffect(tag: HookFlags, create: EffectCallback | void, destroy: EffectCallback | void, deps: EffectDeps) {

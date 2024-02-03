@@ -8,6 +8,7 @@ export interface Dispatcher {
         create: (() => void) | void,
         deps: any[] | void | null
     ) => void
+    useTransition: () => [boolean, (callback: () => void) => void]
 }
 
 export type Dispatch<State> = (action: Action<State>) => void

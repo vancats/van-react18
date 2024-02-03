@@ -222,6 +222,11 @@
       2. dispatchSetState: 将 hooks 接入现有的更新流程中，并且保存到 updateQueue 中以便更新时获取
     2. mountEffect
        1. 创建 hook，标记 PassiveEffect，创建 effect 并形成环状链表
+    3. mountTransition
+       1. 通过 mountState 创建 pending
+       2. 创建当前 hook
+       3. 取得 startTransition 核心函数
+       4. 保存到 hook 的 memoizedState 中
 3. HooksDispatcherOnUpdate: update 时的 hooks 集合
    1. updateState
       1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据
@@ -230,7 +235,12 @@
       2. 浅比较 nextDeps: areHookInputsEqual
       3. 如果相等，pushEffect 中只有 Passive
       4. 如果不相等，先对 Hook 标记 PassiveEffect，在 pushEffect 中加入 HookHasEffect
-
+   3. updateTransition
+      1. 取到 hook 中的数据并返回
+4. startTransition
+   1. 进入 pending 状态，调整优先级为 TransitionLane
+   2. 处理回调
+   3. 关闭 pending 状态并调回原优先级
 
 #### useEffect
 > useEffect、useLayoutEffect、useInsertingEffect

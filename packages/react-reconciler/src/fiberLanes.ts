@@ -1,4 +1,5 @@
 import { unstable_IdlePriority, unstable_ImmediatePriority, unstable_NormalPriority, unstable_UserBlockingPriority, unstable_getCurrentPriorityLevel } from 'scheduler'
+import internals from 'shared/internals'
 import type { FiberRootNode } from './fiber'
 
 export type Lanes = number
@@ -10,13 +11,18 @@ export const NoLane = 0b00000000
 export const SyncLane = 0b00000001
 export const InputContinuousLane = 0b00000010
 export const DefaultLane = 0b00000100
-export const IdleLane = 0b00001000
+export const TransitionLane = 0b00001000
+export const IdleLane = 0b00010000
 
 export function mergeLanes(laneA: Lane, laneB: Lane) {
     return laneA | laneB
 }
 
 export function requestUpdateLane() {
+    const isTransition = internals.currentBatchConfig.transition !== null
+    if (isTransition) {
+        return TransitionLane
+    }
     const currentSchedulerPriority = unstable_getCurrentPriorityLevel()
     return schedulerPriorityToLane(currentSchedulerPriority)
 }

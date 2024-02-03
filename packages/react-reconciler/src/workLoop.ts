@@ -1,9 +1,9 @@
 import { scheduleMicroTask } from 'hostConfig'
 import type { CallbackNode } from 'scheduler'
 import {
-    unstable_NormalPriority as NormalPriority,
-    unstable_scheduleCallback as scheduleCallback,
+    unstable_NormalPriority,
     unstable_cancelCallback,
+    unstable_scheduleCallback,
     unstable_shouldYield,
 } from 'scheduler'
 import { beginWork } from './beginWork'
@@ -85,13 +85,16 @@ function ensureRootIsScheduled(root: FiberRootNode) {
         unstable_cancelCallback(existingCallbackNode)
     }
 
+    if (__DEV__) {
+        console.log(
+            `在${updateLane === SyncLane ? '微' : '宏'}任务中调度，优先级：`,
+            updateLane,
+        )
+    }
+
     let newCallbackNode: CallbackNode | null = null
     if (updateLane === SyncLane) {
         // 同步任务优先级，走微任务调度
-        if (__DEV__) {
-            console.warn('当前是微任务调度，优先级：', updateLane)
-        }
-        // 入队
         scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root))
         // 调度微任务
         scheduleMicroTask(flushSyncCallbacks)
@@ -99,7 +102,7 @@ function ensureRootIsScheduled(root: FiberRootNode) {
     else {
         // 其他优先级宏任务调度
         const schedulerPriority = lanesToSchedulerPriority(updateLane)
-        newCallbackNode = scheduleCallback(
+        newCallbackNode = unstable_scheduleCallback(
             schedulerPriority,
             performConcurrentWorkOnRoot.bind(null, root),
         )
@@ -229,7 +232,7 @@ function commitRoot(root: FiberRootNode) {
         if (!rootDoesHasPassiveEffect) {
             rootDoesHasPassiveEffect = true
             // 调度副作用
-            scheduleCallback(NormalPriority, () => {
+            unstable_scheduleCallback(unstable_NormalPriority, () => {
                 flushPassiveEffects(root.pendingPassiveEffects)
                 return undefined
             })
