@@ -14,7 +14,8 @@
         "fc": "vite serve demos/test-fc --config scripts/vite/vite.config.js --force",
         "concurrency": "vite serve demos/test-concurrency --config scripts/vite/vite.config.js --force",
         "transition": "vite serve demos/test-transition --config scripts/vite/vite.config.js --force",
-        "ref": "vite serve demos/test-ref --config scripts/vite/vite.config.js --force"
+        "ref": "vite serve demos/test-ref --config scripts/vite/vite.config.js --force",
+        "context": "vite serve demos/test-context --config scripts/vite/vite.config.js --force"
     },
     "dependencies": {
         "@rollup/plugin-alias": "^5.1.0",

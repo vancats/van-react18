@@ -1,6 +1,6 @@
 import internals from 'shared/internals'
 import type { Dispatch, Dispatcher } from 'react/src/currentDispatcher'
-import type { Action } from 'shared/ReactTypes'
+import type { Action, ReactContext } from 'shared/ReactTypes'
 import type { FiberNode } from './fiber'
 import type { Update, UpdateQueue } from './updateQueue'
 import { createUpdate, createUpdateQueue, enqueueUpdate, processUpdateQueue } from './updateQueue'
@@ -76,6 +76,7 @@ const HooksDispatcherOnMount: Dispatcher = {
     useEffect: mountEffect,
     useTransition: mountTransition,
     useRef: mountRef,
+    useContext: readContext,
 }
 
 const HooksDispatcherOnUpdate: Dispatcher = {
@@ -83,6 +84,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
     useEffect: updateEffect,
     useTransition: updateTransition,
     useRef: updateRef,
+    useContext: readContext,
 }
 
 function mountState<State>(initialState: State | (() => State)): [State, Dispatch<State>] {
@@ -208,6 +210,15 @@ function mountRef<T>(initialValue: T): { current: T } {
 function updateRef() {
     const hook = updateWorkInProgressHook()
     return hook.memoizedState
+}
+
+function readContext<T>(context: ReactContext<T>) {
+    const consumer = currentlyRenderingFiber
+    if (consumer === null) {
+        throw new Error('只能在函数组件中调用useContext')
+    }
+    const value = context._currentValue
+    return value
 }
 
 function startTransition(setPending: Dispatch<boolean>, callback: () => void) {

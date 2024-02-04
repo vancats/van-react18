@@ -190,6 +190,8 @@ function ChildReconciler(shouldTrackEffects: boolean) {
             Array.isArray(element)
             || typeof element === 'string'
             || typeof element === 'number'
+            || element === undefined
+            || element === null
         ) {
             return index
         }

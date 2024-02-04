@@ -2,10 +2,11 @@ import type { ReactElementType } from 'shared/ReactTypes'
 import { mountChildFibers, reconcileChildFibers } from './childFibers'
 import type { FiberNode } from './fiber'
 import { type UpdateQueue, processUpdateQueue } from './updateQueue'
-import { Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
+import { ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
 import { renderWithHooks } from './fiberHooks'
 import type { Lane } from './fiberLanes'
 import { Ref } from './fiberFlags'
+import { pushProvider } from './fiberContext'
 
 /**
  * 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
@@ -21,6 +22,8 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
             return updateFunctionComponent(wip, renderLane)
         case Fragment:
             return updateFragment(wip)
+        case ContextProvider:
+            return updateContextProvider(wip)
         case HostText:
             return null
         default:
@@ -64,6 +67,18 @@ function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
 function updateFragment(wip: FiberNode) {
     // Fragment的children就在它的pendingProps上
     const nextChildren = wip.pendingProps
+    reconcileChildren(wip, nextChildren)
+    return wip.child
+}
+
+function updateContextProvider(wip: FiberNode) {
+    const providerType = wip.type
+    const context = providerType._context
+    const newProps = wip.pendingProps
+
+    pushProvider(context, newProps.value)
+
+    const nextChildren = newProps.children
     reconcileChildren(wip, nextChildren)
     return wip.child
 }

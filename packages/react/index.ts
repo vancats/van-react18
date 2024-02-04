@@ -26,12 +26,18 @@ export const useRef: Dispatcher['useRef'] = (initialValue) => {
     return dispatcher.useRef(initialValue)
 }
 
+export const useContext: Dispatcher['useContext'] = (context) => {
+    const dispatcher = resolveDispatcher()
+    return dispatcher.useContext(context)
+}
+
 export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = {
     currentDispatcher,
     currentBatchConfig,
 }
 
 export { REACT_FRAGMENT_TYPE as Fragment } from 'shared/ReactSymbols'
+export { createContext } from './src/context'
 export const version = '0.0.0'
 export const isValidElement = isValidElementFn
 // TODO 根据不同环境导出不同的包

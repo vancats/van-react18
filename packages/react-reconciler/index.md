@@ -367,3 +367,13 @@
 - eventTypeToSchedulerPriority
 - lanesToSchedulerPriority
 - schedulerPriorityToLane
+
+
+### Context
+1. 实现 Context 数据结构
+2. 实现逻辑
+   1. 实现对 ContextProvider 类型的 FiberNode 的支持
+      1. beginWork、completeWork、更新 fiberTag
+   2. 支持 context._currentValue 的变化
+   3. 支持嵌套的 context(栈)
+3. 它没有其他 hook 的限制，可以在异步语句中使用
