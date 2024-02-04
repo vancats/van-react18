@@ -227,6 +227,9 @@
        2. 创建当前 hook
        3. 取得 startTransition 核心函数
        4. 保存到 hook 的 memoizedState 中
+    4. mountRef
+       1. 创建当前 hook，定义 ref
+       2. 保存到 hook 的 memoizedState 中，返回
 3. HooksDispatcherOnUpdate: update 时的 hooks 集合
    1. updateState
       1. updateWorkInProgressHook: 从 current 中获取到 hook 以及相应数据
@@ -237,10 +240,25 @@
       4. 如果不相等，先对 Hook 标记 PassiveEffect，在 pushEffect 中加入 HookHasEffect
    3. updateTransition
       1. 取到 hook 中的数据并返回
+   4. updateRef
+      1. 取到 hook 中的数据并返回
 4. startTransition
    1. 进入 pending 状态，调整优先级为 TransitionLane
    2. 处理回调
    3. 关闭 pending 状态并调回原优先级
+5. Ref
+   1. 数据结构：(instance: T) => void | { current: T }
+   2. HostComponent Ref 工作流程
+      1. 标记 Ref
+         1. mount 时，存在 ref
+         2. update 时，ref 引用变化
+         3. 标记时机: beginWork、completeWork
+      2. 执行 Ref
+         1. 正常的绑定操作
+           1. 解绑之前的 ref(mutation)
+           2. 绑定新的 ref(layout)
+         2. 组件卸载
+            1. 解绑之前的 ref
 
 #### useEffect
 > useEffect、useLayoutEffect、useInsertingEffect

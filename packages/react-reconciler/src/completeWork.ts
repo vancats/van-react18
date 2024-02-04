@@ -2,10 +2,14 @@ import type { Container, Instance } from 'hostConfig'
 import { appendInitialChild, createInstance, createTextInstance } from 'hostConfig'
 import type { FiberNode } from './fiber'
 import { Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
-import { NoFlags, Update } from './fiberFlags'
+import { NoFlags, Ref, Update } from './fiberFlags'
 
 function markUpdate(fiber: FiberNode) {
     fiber.flags |= Update
+}
+
+function markRef(fiber: FiberNode) {
+    fiber.flags |= Ref
 }
 
 export const completeWork = (wip: FiberNode) => {
@@ -16,6 +20,10 @@ export const completeWork = (wip: FiberNode) => {
             if (current !== null && wip.stateNode) {
                 // TODO 应该要做部分的更新，并且有更新了再标记 Update
                 markUpdate(wip)
+                // 标记 ref
+                if (current.ref !== wip.ref) {
+                    markRef(wip)
+                }
             }
             else {
                 // 1. 构建DOM
@@ -23,6 +31,10 @@ export const completeWork = (wip: FiberNode) => {
                 // 2. 插入到DOM树
                 appendAllChildren(instance, wip)
                 wip.stateNode = instance
+                // 3. 标记 ref
+                if (wip.ref !== null) {
+                    markRef(wip)
+                }
             }
             bubbleProperties(wip)
             return

@@ -9,6 +9,7 @@ export interface Dispatcher {
         deps: any[] | void | null
     ) => void
     useTransition: () => [boolean, (callback: () => void) => void]
+    useRef: <T>(initialValue: T) => { current: T }
 }
 
 export type Dispatch<State> = (action: Action<State>) => void

@@ -8,8 +8,10 @@ export const Placement = 0b00000000001
 export const Update = 0b00000000010
 export const ChildDeletion = 0b00000000100
 export const PassiveEffect = 0b00000001000
+export const Ref = 0b00000010000
 
-export const MutationMask = Placement | Update | ChildDeletion
+export const MutationMask = Placement | Update | ChildDeletion | Ref
+export const LayoutMask = Ref
 export const PassiveMask = PassiveEffect | ChildDeletion
 
 export function hasMask(fiber: FiberNode, mask: Mask) {

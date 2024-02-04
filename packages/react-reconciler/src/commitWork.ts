@@ -2,39 +2,51 @@
 /* eslint-disable no-labels */
 import { type Container, type Instance, appendChildToContainer, commitUpdate, insertChildToContainer, removeChild } from 'hostConfig'
 import type { FiberNode, FiberRootNode, PendingPassiveEffects } from './fiber'
-import { ChildDeletion, MutationMask, NoFlags, PassiveEffect, PassiveMask, Placement, Update } from './fiberFlags'
+import type { Flags } from './fiberFlags'
+import { ChildDeletion, LayoutMask, MutationMask, NoFlags, PassiveEffect, PassiveMask, Placement, Ref, Update } from './fiberFlags'
 import { FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
 import type { Effect, FCUpdateQueue } from './fiberHooks'
 import type { HookFlags } from './hookEffectTags'
 import { HasEffect } from './hookEffectTags'
 
 let nextEffect: FiberNode | null = null
-export function commitMutationEffects(finishedWork: FiberNode, root: FiberRootNode) {
-    nextEffect = finishedWork
-    while (nextEffect !== null) {
-        const child: FiberNode | null = nextEffect.child
-        // 如果子节点中还含有Mutation阶段副作用，向下
-        if ((nextEffect.subtreeFlags & (MutationMask | PassiveMask)) !== NoFlags && child !== null) {
-            nextEffect = child
-        }
-        else {
-            up: while (nextEffect !== null) {
-                // 对当前节点进行 mutation 操作
-                commitMutationEffectsOnFiber(nextEffect, root)
-                // 向右向上遍历
-                const sibling: FiberNode | null = nextEffect.sibling
-                if (sibling !== null) {
-                    nextEffect = sibling
-                    break up
+
+function commitEffects(
+    phrase: 'mutation' | 'layout',
+    mask: Flags,
+    callback: (fiber: FiberNode, root: FiberRootNode) => void,
+) {
+    return (finishedWork: FiberNode, root: FiberRootNode) => {
+        nextEffect = finishedWork
+        while (nextEffect !== null) {
+            const child: FiberNode | null = nextEffect.child
+            // 如果子节前点中还含有Mutation阶段副作用，向下
+            if ((nextEffect.subtreeFlags & mask) !== NoFlags && child !== null) {
+                nextEffect = child
+            }
+            else {
+                up: while (nextEffect !== null) {
+                    // 对当节点进行 mutation 操作
+                    callback(nextEffect, root)
+                    // 向右向上遍历
+                    const sibling: FiberNode | null = nextEffect.sibling
+                    if (sibling !== null) {
+                        nextEffect = sibling
+                        break up
+                    }
+                    nextEffect = nextEffect.return
                 }
-                nextEffect = nextEffect.return
             }
         }
     }
 }
 
+export const commitMutationEffects = commitEffects('mutation', MutationMask | PassiveMask, commitMutationEffectsOnFiber)
+
+export const commitLayoutEffects = commitEffects('layout', LayoutMask, commitLayoutEffectsOnFiber)
+
 function commitMutationEffectsOnFiber(finishedWork: FiberNode, root: FiberRootNode) {
-    const flags = finishedWork.flags
+    const { flags, tag } = finishedWork
     /// Placement
     if ((flags & Placement) !== NoFlags) {
         commitPlacement(finishedWork)
@@ -63,6 +75,48 @@ function commitMutationEffectsOnFiber(finishedWork: FiberNode, root: FiberRootNo
     if ((flags & PassiveEffect) !== NoFlags) {
         commitPassiveEffect(finishedWork, root, 'update')
         finishedWork.flags &= ~PassiveEffect
+    }
+
+    /// DetachRef
+    if ((flags & Ref) !== NoFlags && tag === HostComponent) {
+        safelyDetachRef(finishedWork)
+    }
+}
+
+function commitLayoutEffectsOnFiber(finishedWork: FiberNode, root: FiberRootNode) {
+    const { flags, tag } = finishedWork
+    // 绑定新的 Ref
+    if ((flags & Ref) !== NoFlags && tag === HostComponent) {
+        safelyAttachRef(finishedWork)
+        // 消除副作用
+        finishedWork.flags &= ~Ref
+    }
+}
+
+// 绑定 ref
+function safelyAttachRef(fiber: FiberNode) {
+    const ref = fiber.ref
+    if (ref !== null) {
+        const instance = fiber.stateNode
+        if (typeof ref === 'function') {
+            ref(instance)
+        }
+        else {
+            ref.current = instance
+        }
+    }
+}
+
+// 解绑 ref
+function safelyDetachRef(current: FiberNode) {
+    const ref = current.ref
+    if (ref !== null) {
+        if (typeof ref === 'function') {
+            ref(null)
+        }
+        else {
+            ref.current = null
+        }
     }
 }
 
@@ -172,7 +226,8 @@ function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
         switch (unmountFiber.tag) {
             case HostComponent:
                 recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)
-                // TODO 解绑ref
+                // 解绑ref
+                safelyDetachRef(unmountFiber)
                 break
             case HostText:
                 recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)

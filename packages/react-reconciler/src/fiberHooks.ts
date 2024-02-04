@@ -75,12 +75,14 @@ const HooksDispatcherOnMount: Dispatcher = {
     useState: mountState,
     useEffect: mountEffect,
     useTransition: mountTransition,
+    useRef: mountRef,
 }
 
 const HooksDispatcherOnUpdate: Dispatcher = {
     useState: updateState,
     useEffect: updateEffect,
     useTransition: updateTransition,
+    useRef: updateRef,
 }
 
 function mountState<State>(initialState: State | (() => State)): [State, Dispatch<State>] {
@@ -194,6 +196,18 @@ function updateTransition(): [boolean, (callback: () => void) => void] {
     const hook = updateWorkInProgressHook()
     const start = hook.memoizedState
     return [isPending as boolean, start]
+}
+
+function mountRef<T>(initialValue: T): { current: T } {
+    const hook = mountWorkInProgressHook()
+    const ref = { current: initialValue }
+    hook.memoizedState = ref
+    return ref
+}
+
+function updateRef() {
+    const hook = updateWorkInProgressHook()
+    return hook.memoizedState
 }
 
 function startTransition(setPending: Dispatch<boolean>, callback: () => void) {

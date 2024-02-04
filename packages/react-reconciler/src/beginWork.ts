@@ -5,6 +5,7 @@ import { type UpdateQueue, processUpdateQueue } from './updateQueue'
 import { Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from './workTags'
 import { renderWithHooks } from './fiberHooks'
 import type { Lane } from './fiberLanes'
+import { Ref } from './fiberFlags'
 
 /**
  * 1. 通过对比子节点的 current 与 ReactElement，生成相应的 wip
@@ -49,6 +50,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 function updateHostComponent(wip: FiberNode) {
     const nextProps = wip.pendingProps
     const nextChildren = nextProps.children
+    markRef(wip.alternate, wip)
     reconcileChildren(wip, nextChildren)
     return wip.child
 }
@@ -74,5 +76,17 @@ function reconcileChildren(wip: FiberNode, nextChildren?: ReactElementType) {
     }
     else {
         wip.child = mountChildFibers(wip, null, nextChildren)
+    }
+}
+
+function markRef(current: FiberNode | null, wip: FiberNode) {
+    const ref = wip.ref
+    if (
+        // mount 时存在 ref
+        (current === null && ref !== null)
+        // update 时 ref 变化
+        || (current !== null && current.ref !== ref)
+    ) {
+        wip.flags |= Ref
     }
 }

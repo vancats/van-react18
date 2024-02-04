@@ -1,4 +1,4 @@
-import type { ElementType, Key, Props, ReactElementType } from 'shared/ReactTypes'
+import type { ElementType, Key, Props, ReactElementType, Ref } from 'shared/ReactTypes'
 import type { Container } from 'hostConfig'
 import type { CallbackNode } from 'scheduler'
 import { Fragment, FunctionComponent, HostComponent, type WorkTag } from './workTags'
@@ -14,7 +14,7 @@ export class FiberNode {
     // 如果是FC，就是 FC 函数，如果是元素，则是字符串
     type: ElementType
     stateNode: any
-    ref: any
+    ref: Ref | null
 
     return: FiberNode | null
     sibling: FiberNode | null
@@ -114,11 +114,12 @@ export function createWorkInProgress(
     wip.child = current.child
     wip.memoizedProps = current.memoizedProps
     wip.memoizedState = current.memoizedState
+    wip.ref = current.ref
     return wip
 }
 
 export function createFiberFromElement(element: ReactElementType) {
-    const { type, key, props } = element
+    const { type, key, props, ref } = element
     let fiberTag: WorkTag = FunctionComponent
 
     if (typeof type === 'string') {
@@ -129,6 +130,7 @@ export function createFiberFromElement(element: ReactElementType) {
     }
     const fiber = new FiberNode(fiberTag, props, key)
     fiber.type = type
+    fiber.ref = ref
     return fiber
 }
 

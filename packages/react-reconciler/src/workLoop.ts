@@ -7,7 +7,7 @@ import {
     unstable_shouldYield,
 } from 'scheduler'
 import { beginWork } from './beginWork'
-import { commitHookEffectListCreate, commitHookEffectListDestroy, commitHookEffectListUnmount, commitMutationEffects } from './commitWork'
+import { commitHookEffectListCreate, commitHookEffectListDestroy, commitHookEffectListUnmount, commitLayoutEffects, commitMutationEffects } from './commitWork'
 import { completeWork } from './completeWork'
 import type { FiberNode, FiberRootNode, PendingPassiveEffects } from './fiber'
 import { createWorkInProgress } from './fiber'
@@ -244,6 +244,9 @@ function commitRoot(root: FiberRootNode) {
         commitMutationEffects(finishedWork, root)
         // 需要进行节点树切换
         root.current = finishedWork
+
+        // 注意：这时候的 wip 已经变成了 current
+        commitLayoutEffects(finishedWork, root)
     }
     else {
         root.current = finishedWork
